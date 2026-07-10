@@ -1,0 +1,6 @@
+{
+  "name": "HelpDesk TI V.Final",
+  "description": "Um aplicativo de helpdesk para gerenciamento de chamados de TI, permitindo o acompanhamento de status, prioridades e categorias.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

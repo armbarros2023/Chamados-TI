@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chamados TI Project"
+  short_description: "Contexto e fluxo operacional do Chamados TI"
+  default_prompt: "Use $chamados-ti-project para continuar o trabalho no Chamados-TI com o contexto e as decisões já aprovadas."

@@ -1,0 +1,37 @@
+
+# === Geral ===
+.DS_Store
+*.log
+npm-debug.log*
+
+# Arquivos de ambiente 
+.env
+
+# === Frontend (Vite/React) ===
+# Ignorar dependências do Node
+node_modules/
+
+# === Backend ===
+# Ignorar dependências do Node no backend
+backend/node_modules/
+
+# Ignorar a pasta de build do TypeScript
+dist/
+build/
+backend/dist/
+backend/build/
+
+
+# Ignorar arquivos de log do backend
+backend/*.log
+backend/uploads/
+backend/public/avatars/
+backups/
+coverage/
+playwright-report/
+test-results/
+artifacts/
+
+# === Editor/IDE ===
+.vscode/
+.idea/

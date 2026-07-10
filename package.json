@@ -1,0 +1,52 @@
+{
+  "name": "helpdesk-ti-v.final",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "npx vite build",
+    "build:desktop": "npx vite build --configLoader runner --mode desktop",
+    "build:android": "npx vite build --mode android",
+    "cap:sync:android": "npm run build:android && npx cap sync android",
+    "android:apk": "npm run cap:sync:android && sh scripts/build-android.sh",
+    "tauri:dev": "tauri dev",
+    "tauri:build:mac": "tauri build --bundles app,dmg",
+    "tauri:build:windows": "sh scripts/build-windows.sh",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run test && npm run build && npm --prefix backend run test && npm --prefix backend run test:scripts && npm --prefix backend run build",
+    "verify:desktop": "npm run verify && npm run build:desktop && cargo test --manifest-path src-tauri/Cargo.toml"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-http": "^2.5.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
+    "@playwright/test": "^1.61.1",
+    "@tauri-apps/cli": "^2.11.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.2",
+    "jsdom": "^27.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.7.2",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.4"
+  }
+}

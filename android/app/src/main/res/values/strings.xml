@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chamados TI</string>
+    <string name="title_activity_main">Chamados TI</string>
+    <string name="package_name">com.arbtechinfo.chamadosti</string>
+    <string name="custom_url_scheme">com.arbtechinfo.chamadosti</string>
+</resources>

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Histórico Chamados TI"
+  short_description: "Histórico técnico, instaladores e backups"
+  default_prompt: "Use $chamados-ti-creation-history para recuperar o histórico validado, os instaladores e o procedimento de backup do Chamados TI."

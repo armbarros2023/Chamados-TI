@@ -1,0 +1,48 @@
+{
+  "name": "helpdesk-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node build/index.js",
+    "build": "rm -rf build && npx tsc",
+    "dev": "tsc-watch --onSuccess \"npm run start\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:scripts": "node --test scripts/*.test.mjs",
+    "backup": "node scripts/backup-db.mjs",
+    "backup:verify": "node scripts/verify-backup.mjs",
+    "restore:staging": "node scripts/restore-staging.mjs",
+    "migrate": "node scripts/migrate.mjs"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "nodemailer": "^9.0.3",
+    "pg": "^8.16.0",
+    "sharp": "^0.35.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^1.4.13",
+    "@types/node": "^24.0.3",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.15.4",
+    "@types/uuid": "^10.0.0",
+    "rimraf": "^6.0.1",
+    "tsc-watch": "^7.1.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f766e">
+    <title>Chamados TI — Sem conexão</title>
+    <style>
+      :root { color-scheme: light dark; font-family: Aptos, "Segoe UI", system-ui, sans-serif; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
+      main { width: min(90%, 32rem); padding: 2rem; border: 1px solid #cbd5e1; border-radius: 14px; background: #fff; }
+      h1 { margin-top: 0; font-size: 1.5rem; }
+      p { line-height: 1.6; color: #475569; }
+      button { min-height: 44px; padding: .75rem 1rem; border: 0; border-radius: 10px; background: #0f766e; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+      @media (prefers-color-scheme: dark) { body { background: #0f172a; color: #f1f5f9; } main { background: #1e293b; border-color: #475569; } p { color: #cbd5e1; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sem conexão com o servidor</h1>
+      <p>Confira sua internet e tente novamente. Nenhuma solicitação será enviada até a conexão voltar.</p>
+      <button type="button" onclick="location.reload()">Tentar novamente</button>
+    </main>
+  </body>
+</html>
