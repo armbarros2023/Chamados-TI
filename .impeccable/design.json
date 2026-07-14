@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-14T00:00:00-03:00",
+  "source": "DESIGN.md",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "acao principal, selecao e foco operacional",
+        "tonalRamp": ["#042f2e", "#115e59", "#0f766e", "#0d9488", "#14b8a6", "#5eead4", "#99f6e4", "#ccfbf1"]
+      },
+      "accent": {
+        "role": "atencao e pendencia",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fcd34d", "#fef3c7"]
+      },
+      "danger": {
+        "role": "erro, risco e confirmacao destrutiva",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fee2e2"]
+      },
+      "success": {
+        "role": "conclusao e confirmacao positiva",
+        "tonalRamp": ["#052e16", "#14532d", "#166534", "#15803d", "#16a34a", "#22c55e", "#86efac", "#dcfce7"]
+      },
+      "neutral": {
+        "role": "estrutura, leitura e superficies",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#cbd5e1", "#e2e8f0", "#f8fafc"]
+      }
+    },
+    "typographyMeta": {
+      "fontStack": "Aptos, Segoe UI, system-ui, sans-serif",
+      "purpose": "Uma unica familia humanista para leitura rapida em dispositivos corporativos.",
+      "roles": {
+        "display": "titulo de tela e contexto principal",
+        "title": "titulo de secao e cartao",
+        "body": "instrucao, descricao e mensagem",
+        "label": "campo, filtro e metadado operacional"
+      }
+    },
+    "motion": {
+      "duration": "150ms",
+      "easing": "ease-out",
+      "principle": "Apenas resposta de estado; sem entradas coreografadas ou splash.",
+      "reducedMotion": "Desabilitar transicoes e animacoes sem alterar contexto ou funcionalidade."
+    },
+    "responsive": {
+      "principle": "A mesma tarefa e informacao essencial permanecem disponiveis em telas pequenas.",
+      "breakpoints": {
+        "sm": "640px",
+        "lg": "1024px"
+      },
+      "minimumTarget": "44px"
+    },
+    "shadows": {
+      "surface": "0 1px 2px rgb(15 23 42 / 5%)",
+      "overlay": "0 4px 6px -1px rgb(15 23 42 / 10%), 0 2px 4px -2px rgb(15 23 42 / 10%)"
+    },
+    "components": [
+      {
+        "name": "Botao principal",
+        "description": "Executa a proxima acao mais importante da area.",
+        "html": "<button class=\"ds-button ds-button--primary\" type=\"button\">Abrir chamado</button>",
+        "css": ".ds-button{min-height:44px;border-radius:10px;padding:12px 20px;font:600 1rem/1.25 Aptos,Segoe UI,system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease-out,outline-color 150ms ease-out}.ds-button:focus-visible{outline:3px solid #14b8a6;outline-offset:2px}.ds-button--primary{border:1px solid #0f766e;background:#0f766e;color:#fff}.ds-button--primary:hover{background:#115e59}"
+      },
+      {
+        "name": "Botao secundario",
+        "description": "Apoia acoes uteis sem competir com a acao principal.",
+        "html": "<button class=\"ds-button ds-button--secondary\" type=\"button\">Cancelar</button>",
+        "css": ".ds-button{min-height:44px;border-radius:10px;padding:12px 20px;font:600 1rem/1.25 Aptos,Segoe UI,system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease-out,outline-color 150ms ease-out}.ds-button:focus-visible{outline:3px solid #14b8a6;outline-offset:2px}.ds-button--secondary{border:1px solid #cbd5e1;background:#fff;color:#0f172a}.ds-button--secondary:hover{background:#f8fafc}"
+      },
+      {
+        "name": "Campo de formulario",
+        "description": "Campo rotulado com foco visivel e area de toque suficiente.",
+        "html": "<label class=\"ds-field\"><span>Assunto</span><input class=\"ds-input\" type=\"text\" placeholder=\"Descreva o problema\"></label>",
+        "css": ".ds-field{display:grid;gap:8px;color:#0f172a;font:600 .875rem/1.4 Aptos,Segoe UI,system-ui,sans-serif}.ds-input{box-sizing:border-box;min-height:44px;width:100%;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;padding:12px 14px;font:400 1rem/1.5 Aptos,Segoe UI,system-ui,sans-serif}.ds-input:focus{border-color:#0f766e;outline:3px solid #14b8a6;outline-offset:2px}.ds-input::placeholder{color:#475569}"
+      },
+      {
+        "name": "Cartao de resumo",
+        "description": "Resume uma unica metrica ou estado sem criar painel generico.",
+        "html": "<article class=\"ds-summary-card\"><p class=\"ds-summary-card__label\">Chamados abertos</p><strong class=\"ds-summary-card__value\">24</strong><p class=\"ds-summary-card__detail\">Atualizado agora</p></article>",
+        "css": ".ds-summary-card{border:1px solid #cbd5e1;border-radius:14px;background:#fff;box-shadow:0 1px 2px rgb(15 23 42 / 5%);padding:20px;color:#0f172a}.ds-summary-card__label,.ds-summary-card__detail{margin:0;color:#475569;font:400 .875rem/1.4 Aptos,Segoe UI,system-ui,sans-serif}.ds-summary-card__value{display:block;margin:8px 0;font:700 1.875rem/1.2 Aptos,Segoe UI,system-ui,sans-serif}"
+      },
+      {
+        "name": "Item de navegacao lateral",
+        "description": "Mantem a secao ativa evidente na navegacao autenticada.",
+        "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#chamados\">Chamados</a>",
+        "css": ".ds-nav-item{display:flex;min-height:44px;align-items:center;border-radius:10px;padding:0 12px;color:#cbd5e1;font:600 .875rem/1.4 Aptos,Segoe UI,system-ui,sans-serif;text-decoration:none}.ds-nav-item:hover{background:#334155;color:#f1f5f9}.ds-nav-item--active{background:#0f766e;color:#fff}.ds-nav-item:focus-visible{outline:3px solid #14b8a6;outline-offset:2px}"
+      },
+      {
+        "name": "Confirmacao destrutiva",
+        "description": "Separa claramente consequencia, cancelamento e remocao irreversivel.",
+        "html": "<section class=\"ds-dialog\" aria-labelledby=\"ds-dialog-title\"><h2 id=\"ds-dialog-title\">Excluir chamado?</h2><p>Os anexos tambem serao removidos.</p><div class=\"ds-dialog__actions\"><button class=\"ds-button ds-button--secondary\" type=\"button\">Cancelar</button><button class=\"ds-button ds-button--danger\" type=\"button\">Excluir</button></div></section>",
+        "css": ".ds-dialog{max-width:420px;border:1px solid #cbd5e1;border-radius:14px;background:#fff;box-shadow:0 4px 6px -1px rgb(15 23 42 / 10%),0 2px 4px -2px rgb(15 23 42 / 10%);padding:24px;color:#0f172a}.ds-dialog h2,.ds-dialog p{margin:0}.ds-dialog p{margin-top:8px;color:#475569;font:400 1rem/1.5 Aptos,Segoe UI,system-ui,sans-serif}.ds-dialog__actions{display:flex;gap:8px;justify-content:flex-end;margin-top:24px}.ds-button--danger{border:1px solid #b91c1c;background:#b91c1c;color:#fff}.ds-button--danger:hover{background:#991b1b}"
+      }
+    ]
+  }
+}

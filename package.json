@@ -1,7 +1,7 @@
 {
   "name": "helpdesk-ti-v.final",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -11,7 +11,7 @@
     "cap:sync:android": "npm run build:android && npx cap sync android",
     "android:apk": "npm run cap:sync:android && sh scripts/build-android.sh",
     "tauri:dev": "tauri dev",
-    "tauri:build:mac": "tauri build --bundles app,dmg",
+    "tauri:build:mac": "sh scripts/build-macos.sh",
     "tauri:build:windows": "sh scripts/build-windows.sh",
     "preview": "vite preview",
     "lint": "eslint .",

@@ -1,6 +1,6 @@
 [package]
 name = "chamados-ti"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cliente desktop do sistema Chamados TI"
 authors = ["Arbtech Info"]
 publish = false

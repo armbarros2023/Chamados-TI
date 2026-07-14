@@ -25,7 +25,7 @@
 - Lighthouse local registrou desempenho 99 e acessibilidade 100.
 - A API principal usa `/api/v1`; `/api` é compatibilidade temporária com depreciação.
 - Backup local com checksum foi validado em 2026-07-07.
-- Staging HTTPS publicado em `https://chamados-staging.arbtechinfo.com.br`; o endereço técnico temporário permanece documentado apenas no inventário privado.
+- Staging HTTPS publicado em `https://chamados-staging.arbtechinfo.com.br`; o endereço `https://chamados-staging.72-61-63-197.nip.io` permanece como contingência.
 - DNS, certificado Let's Encrypt, redirecionamento HTTPS, API v1, readiness, PWA, cabeçalhos de segurança e CORS foram validados externamente em 2026-07-07.
 - Restore, migrations, login, PWA e backup remoto foram validados; a senha não é armazenada nesta skill.
 - Instalador macOS Tauri 0.1.0 para Apple Silicon gerado em `artifacts/macos/Chamados-TI-0.1.0-arm64.dmg` com assinatura ad-hoc, Keychain e API de staging.

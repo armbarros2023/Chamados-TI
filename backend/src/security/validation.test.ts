@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {validatePassword, cleanText} from './validation.js';
+import {cleanText, isSupportedRole, validateEmail, validatePassword} from './validation.js';
 
 describe('security validation', () => {
   it('rejeita senhas curtas ou sem diversidade', () => {
@@ -14,5 +14,13 @@ describe('security validation', () => {
   it('normaliza texto e aplica limite', () => {
     expect(cleanText('  assunto   importante  ', 30)).toBe('assunto importante');
     expect(() => cleanText('texto longo', 4)).toThrow('excede');
+  });
+
+  it('valida e-mail e funções permitidas', () => {
+    expect(validateEmail('usuario@empresa.com')).toBe(true);
+    expect(validateEmail('email-inválido')).toBe(false);
+    expect(isSupportedRole('Administrador')).toBe(true);
+    expect(isSupportedRole('Usuário')).toBe(true);
+    expect(isSupportedRole('Superadmin')).toBe(false);
   });
 });

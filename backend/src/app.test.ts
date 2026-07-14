@@ -30,12 +30,10 @@ describe('versionamento da API', () => {
     expect(response.headers.get('cache-control')).toContain('no-store');
   });
 
-  it('mantém /api temporariamente com aviso de depreciação', async () => {
+  it('não expõe a rota legada /api', async () => {
     const response = await fetch(`${baseUrl}/api/health`);
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('deprecation')).toBe('true');
-    expect(response.headers.get('link')).toContain('/api/v1');
+    expect(response.status).toBe(404);
   });
 
   it('bloqueia uma origem fora da allowlist', async () => {

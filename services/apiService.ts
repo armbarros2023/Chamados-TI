@@ -7,7 +7,7 @@ import {
   saveDesktopRefreshToken,
 } from './desktopSession';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3002/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/backend/v1';
 let accessToken: string | null = null;
 export const setAccessToken = (token: string | null) => { accessToken = token; };
 
@@ -41,6 +41,8 @@ export const login = async (username: string, password: string, rememberMe: bool
   setAccessToken(data.token);
   return data;
 };
+export const register = async (data: {username: string; name: string; email: string; password: string}) =>
+  apiFetch<User>(`${API_BASE_URL}/auth/register`, {method: 'POST', headers: jsonHeaders, body: JSON.stringify(data)});
 export const refreshSession = async () => {
   const desktopRefreshToken = isInstalledRuntime() ? await loadDesktopRefreshToken() : null;
   if (isInstalledRuntime() && !desktopRefreshToken) return {token: null, user: null};
@@ -73,7 +75,9 @@ export const createUser = (userData: {username: string; name: string; email: str
 export const updateUser = (id: string, userData: {name: string; email: string; role: 'Administrador' | 'Usuário'; password?: string}) => apiFetch<User>(`${API_BASE_URL}/users/${id}`, {method: 'PUT', headers: jsonHeaders, body: JSON.stringify(userData)});
 export const deleteUser = (id: string) => apiFetch<void>(`${API_BASE_URL}/users/${id}`, {method: 'DELETE'});
 export const getTickets = (limit: number, offset: number) => apiFetch<{tickets: Ticket[]; total: number}>(`${API_BASE_URL}/tickets?limit=${limit}&offset=${offset}`);
-export const createTicket = (data: {title: string; description: string; category: string; priority: string}) => apiFetch<Ticket>(`${API_BASE_URL}/tickets`, {method: 'POST', headers: jsonHeaders, body: JSON.stringify(data)});
+export interface TicketMetric {department: string; total: number; resolved: number; averageResolutionHours: number | null}
+export const getTicketMetrics = () => apiFetch<TicketMetric[]>(`${API_BASE_URL}/tickets/metrics`);
+export const createTicket = (data: {title: string; description: string; category: string; priority: string; department: string}) => apiFetch<Ticket>(`${API_BASE_URL}/tickets`, {method: 'POST', headers: jsonHeaders, body: JSON.stringify(data)});
 export const updateTicketStatus = (id: string, newStatus: TicketStatus) => apiFetch<Ticket>(`${API_BASE_URL}/tickets/${id}/status`, {method: 'PATCH', headers: jsonHeaders, body: JSON.stringify({newStatus})});
 export const getCommentsForTicket = (id: string) => apiFetch<Comment[]>(`${API_BASE_URL}/tickets/${id}/comments`);
 export const addCommentToTicket = (id: string, text: string) => apiFetch<Comment>(`${API_BASE_URL}/tickets/${id}/comments`, {method: 'POST', headers: jsonHeaders, body: JSON.stringify({text})});

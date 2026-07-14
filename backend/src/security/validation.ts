@@ -1,6 +1,9 @@
 export const validatePassword = (password: string) =>
   password.length >= 10 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
 
+export const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export const isSupportedRole = (role: unknown): role is 'Administrador' | 'Usuário' => role === 'Administrador' || role === 'Usuário';
+
 export const cleanText = (value: unknown, maxLength: number) => {
   if (typeof value !== 'string') throw new Error('Valor textual inválido.');
   const cleaned = value.trim().replace(/\s+/g, ' ');

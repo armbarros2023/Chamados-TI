@@ -1,7 +1,7 @@
 // Importamos Router E RequestHandler de express
 import { Router, RequestHandler } from 'express';
 import rateLimit from 'express-rate-limit';
-import { login, logout, refresh } from '../controllers/auth.controller.js';
+import { login, logout, refresh, register } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -15,7 +15,16 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const registerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: {message: 'Muitas tentativas de cadastro. Tente novamente mais tarde.'},
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 router.post('/login', loginLimiter, login as RequestHandler);
+router.post('/register', registerLimiter, register as RequestHandler);
 router.post('/refresh', refresh as RequestHandler);
 router.post('/logout', logout as RequestHandler);
 

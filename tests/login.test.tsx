@@ -4,10 +4,12 @@ import LoginPage from '../pages/LoginPage';
 import {ThemeProvider} from '../context/ThemeContext';
 
 vi.mock('../context/AuthContext', () => ({useAuth: () => ({login: vi.fn()})}));
+vi.mock('../services/apiService', () => ({register: vi.fn()}));
 
 test('login expõe campos e ação com nomes acessíveis', () => {
   render(<ThemeProvider><LoginPage /></ThemeProvider>);
   expect(screen.getByRole('textbox', {name: 'Usuário'})).toBeVisible();
   expect(screen.getByLabelText('Senha')).toBeVisible();
   expect(screen.getByRole('button', {name: 'Entrar'})).toBeEnabled();
+  expect(screen.getByRole('button', {name: 'Criar novo acesso'})).toBeEnabled();
 });

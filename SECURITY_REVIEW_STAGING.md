@@ -55,3 +55,31 @@ Data: 2026-07-07. Escopo: backend local, staging HTTPS autorizado, backup, rotas
 ## Risco residual
 
 Não há achado crítico ou alto validado neste lote. HTTPS, domínio corporativo, restore drill e transporte nativo foram concluídos em staging. Produção permanece bloqueada até monitoramento, assinatura/notarização dos instaladores e avaliação dos achados médios.
+
+---
+
+## Reavaliação de pré-deploy — 2026-07-13
+
+### Correções aplicadas
+
+- Removida a injeção de `GEMINI_API_KEY` no bundle Vite; nenhuma chave de ambiente é exposta ao cliente por configuração de build.
+- Removida a superfície legada `/api`; a aplicação aceita somente `/api/v1`.
+- Upload de anexos protegido por limites específicos de criação, anexo e e-mail; vídeo exige assinatura `ftyp`, anexos privados são gravados com permissão `0600` e são removidos quando o chamado é excluído ou limpo.
+- Mensagem de limite diferencia avatar (5 MB) de anexo de chamado (100 MB).
+- Gestão de usuários valida função e e-mail, exige a mesma política de senha no frontend e backend e impede remover ou rebaixar o último administrador.
+- `.gitignore` passou a proteger arquivos de ambiente, artefatos e diretórios de compilação reproduzíveis.
+- Instaladores 0.1.1 para macOS, Android e Windows foram recompilados após as correções.
+
+### Evidências
+
+- `npm run verify`: 17 testes de frontend, 42 de backend, 2 de scripts, lint e builds aprovados.
+- `npm run test:e2e`: 2 cenários Playwright aprovados em desktop e mobile.
+- `npm audit --omit=dev --audit-level=high` no frontend e backend: 0 vulnerabilidades.
+
+### Bloqueios de produção restantes
+
+1. Publicar a API atual no staging e executar smoke test autenticado; o staging acessível ainda responde `404` para o cadastro público atual.
+2. Produzir instaladores de release assinados: Apple Developer + notarização para macOS, certificado Authenticode para Windows e keystore de release para Android. O APK atual é de depuração e os binários de desktop não são assinados para distribuição pública.
+3. Configurar retenção e alerta de logs no servidor, proteção de borda/rate limit no proxy e backup automatizado com ensaio de restauração periódico.
+4. Avaliar MFA para administradores antes da liberação geral.
+5. Para anexos grandes, planejar upload por streaming/diretório temporário; os limites e a taxa mitigam abuso, mas o middleware atual mantém o arquivo em memória durante a validação.

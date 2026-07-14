@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, TicketCategory, TicketPriority } from '../types';
 import * as apiService from '../services/apiService';
 import { getFullAvatarUrl } from '../utils';
 import { ArrowLeftIcon, PhotoIcon, TagIcon, Squares2X2Icon, ShieldExclamationIcon, DocumentTextIcon, UserCircleIconComponent, XMarkIcon } from './icons';
-import { ticketCategories, ticketPriorities } from '../constants';
+import { departments, ticketCategories, ticketPriorities } from '../constants';
 
 interface NewTicketScreenProps {
   user: User;
@@ -15,16 +15,28 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<TicketCategory>(TicketCategory.Software);
   const [priority, setPriority] = useState<TicketPriority>(TicketPriority.Medium);
+  const [department, setDepartment] = useState(departments[0]);
   const [description, setDescription] = useState('');
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type === 'video/mp4' || file.type === 'video/quicktime') {
+        const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 20 * 1024 * 1024;
+        if (file.size > maxSize) {
+          removeAttachment();
+          setError(`O arquivo excede o limite de ${file.type.startsWith('video/') ? '100 MB' : '20 MB'}.`);
+          return;
+        }
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setAttachmentFile(file);
         setImagePreview(URL.createObjectURL(file));
         setError('');
@@ -36,6 +48,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
   };
 
   const removeAttachment = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setAttachmentFile(null);
     setImagePreview(null);
     const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
@@ -51,13 +64,16 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
     setError('');
     setIsSubmitting(true);
 
+    let ticketCreated = false;
     try {
       const newTicket = await apiService.createTicket({
         title,
         category,
         priority,
+        department,
         description,
       });
+      ticketCreated = true;
 
       if (attachmentFile && newTicket.id) {
         await apiService.uploadTicketAttachment(newTicket.id, attachmentFile);
@@ -66,18 +82,20 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
       onTicketCreate();
 
     } catch (err: any) {
-      setError(`Erro ao criar chamado: ${err.message}`);
+      setError(ticketCreated
+        ? `Chamado criado, mas o anexo não foi enviado: ${err.message}`
+        : `Erro ao criar chamado: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const inputStyle = "w-full bg-white border border-slate-300 rounded-lg py-3 px-4 focus:ring-2 focus:ring-teal-600 sm:text-sm text-slate-900";
+  const inputStyle = "ui-input w-full rounded-lg border py-3 px-4 text-slate-900 focus:ring-2 focus:ring-teal-600 sm:text-sm";
   const labelStyle = "flex items-center text-sm font-medium text-slate-700 mb-2";
 
   return (
-    <div className="flex-1 p-4 sm:p-8 overflow-y-auto text-slate-900 flex flex-col">
-      <div className="flex items-center justify-between mb-8 shrink-0">
+    <div className="flex flex-1 flex-col overflow-y-auto p-4 text-slate-900 sm:p-8">
+      <div className="mb-8 flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 className="text-3xl font-bold">Criar Novo Chamado</h1>
             <p className="text-slate-600 mt-1">Preencha os detalhes abaixo para abrir uma nova solicitação.</p>
@@ -94,7 +112,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
 
       <form onSubmit={handleSubmit} className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-            <div className='bg-white p-6 rounded-2xl border border-slate-200'>
+            <div className='ui-surface rounded-xl border p-6'>
                 <label htmlFor="ticketTitle" className={labelStyle}>
                     <TagIcon className="h-5 w-5 mr-2 text-slate-600"/>
                     Título do Chamado <span className="text-red-500 ml-1">*</span>
@@ -109,7 +127,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                 />
             </div>
             
-            <div className='bg-white p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='ui-surface grid grid-cols-1 gap-6 rounded-xl border p-6 md:grid-cols-2'>
                 <div>
                     <label htmlFor="ticketCategory" className={labelStyle}>
                         <Squares2X2Icon className="h-5 w-5 mr-2 text-slate-600"/>
@@ -124,6 +142,12 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                     {ticketCategories.map(cat => (
                         <option key={cat.value} value={cat.value}>{cat.label}</option>
                     ))}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="ticketDepartment" className={labelStyle}>Departamento</label>
+                    <select id="ticketDepartment" value={department} onChange={(e) => setDepartment(e.target.value)} className={inputStyle} required>
+                      {departments.map(item => <option key={item} value={item}>{item}</option>)}
                     </select>
                 </div>
                  <div>
@@ -144,7 +168,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                 </div>
             </div>
 
-            <div className='bg-white p-6 rounded-2xl border border-slate-200'>
+            <div className='ui-surface rounded-xl border p-6'>
                 <label htmlFor="ticketDescription" className={labelStyle}>
                     <DocumentTextIcon className="h-5 w-5 mr-2 text-slate-600"/>
                     Descrição Detalhada <span className="text-red-500 ml-1">*</span>
@@ -162,7 +186,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
         </div>
 
         <div className="lg:col-span-1 space-y-6">
-            <div className='bg-white p-6 rounded-2xl border border-slate-200'>
+            <div className='ui-surface rounded-xl border p-6'>
                 <h3 className={labelStyle}>
                     <UserCircleIconComponent className="h-5 w-5 mr-2 text-slate-600"/>
                     Solicitante
@@ -182,7 +206,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                 </div>
             </div>
 
-             <div className='bg-white p-6 rounded-2xl border border-slate-200'>
+             <div className='ui-surface rounded-xl border p-6'>
                 <h3 className={labelStyle}>
                     <PhotoIcon className="h-5 w-5 mr-2 text-slate-600"/>
                     Anexar Print (Opcional)
@@ -197,19 +221,23 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <PhotoIcon className="w-8 h-8 mb-4 text-slate-500" />
                                     <p className="mb-2 text-sm text-slate-600"><span className="font-semibold text-teal-700">Clique para enviar</span> ou arraste</p>
-                                    <p className="text-xs text-slate-500">PNG, JPG ou WebP (máx. 5 MB)</p>
+                                    <p className="text-xs text-slate-500">JPG, PNG, WebP (20 MB) ou MP4/MOV (100 MB)</p>
                                 </div>
-                                <input id="imageUpload" type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
+                                <input id="imageUpload" type="file" className="hidden" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" onChange={handleFileChange} />
                             </label>
                         </div> 
                     )}
                     {imagePreview && (
                         <div className="relative group">
-                            <img src={imagePreview} alt="Preview do anexo" className="w-full h-auto rounded-lg object-contain max-h-60" />
+                            {attachmentFile?.type.startsWith('video/') ? (
+                              <video src={imagePreview} controls className="w-full h-auto rounded-lg max-h-60" aria-label="Preview do vídeo anexado" />
+                            ) : (
+                              <img src={imagePreview} alt="Preview do anexo" className="w-full h-auto rounded-lg object-contain max-h-60" />
+                            )}
                              <button
                                 type="button"
                                 onClick={removeAttachment}
-                                className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                className="absolute right-2 top-2 min-h-11 min-w-11 rounded-full bg-slate-900/85 p-1.5 text-white transition-colors hover:bg-red-700"
                                 aria-label="Remover anexo"
                             >
                                 <XMarkIcon className="h-5 w-5" />
@@ -221,20 +249,20 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
         </div>
 
         <div className="lg:col-span-3 mt-4">
-             {error && <p className="text-sm text-red-400 bg-red-500/10 p-3 rounded-lg text-center border border-red-500/20 mb-6">{error}</p>}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
+             {error && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">{error}</p>}
+            <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-6">
                 <button 
                     type="button" 
                     onClick={onCancel} 
                     disabled={isSubmitting} 
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-6 rounded-lg transition-colors disabled:opacity-50"
+                    className="min-h-11 rounded-lg bg-slate-100 px-6 py-2.5 font-semibold text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50"
                 >
                     Cancelar
                 </button>
                 <button 
                     type="submit" 
                     disabled={isSubmitting} 
-                    className="bg-teal-700 hover:bg-teal-800 text-white font-semibold py-2.5 px-8 rounded-lg flex items-center justify-center space-x-2 transition-colors min-h-11 disabled:opacity-70 disabled:cursor-wait"
+                    className="ui-primary flex min-h-11 items-center justify-center space-x-2 rounded-lg px-8 py-2.5 font-semibold transition-colors disabled:cursor-wait disabled:opacity-70"
                 >
                     {isSubmitting ? (
                         <>

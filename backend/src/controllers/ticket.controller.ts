@@ -6,7 +6,8 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware.js';
 import * as emailService from '../services/emailService.js';
 import path from 'path';
 import {privateAttachmentDir} from '../paths.js';
-import {writeOptimizedImage} from '../security/image-storage.js';
+import {deletePrivateAttachment, writeAttachment, writeOptimizedImage} from '../security/image-storage.js';
+import {isVideoType} from '../security/upload-policy.js';
 import {cleanText} from '../security/validation.js';
 
 export const getTickets = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -23,8 +24,10 @@ export const getTickets = async (req: AuthenticatedRequest, res: Response, next:
         const selectFields = `
             id, title, description, status, priority, category, requester, created_by,
             attachment_url AS "attachmentUrl", 
-            ticket_number AS "ticketNumber", 
+            ticket_number AS "ticketNumber",
             created_at AS "date",
+            department,
+            closed_at AS "closedAt",
             unread_by_admin AS "unreadByAdmin",
             unread_by_requester AS "unreadByRequester"
         `;
@@ -84,7 +87,7 @@ export const markTicketAsRead = async (req: AuthenticatedRequest, res: Response,
 
 export const createTicket = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { title, description, category, priority } = req.body;
+        const { title, description, category, priority, department = 'Não informado' } = req.body;
         const loggedInUser = req.user;
 
         if (!title || !description || !category || !priority || !loggedInUser) {
@@ -105,6 +108,7 @@ export const createTicket = async (req: AuthenticatedRequest, res: Response, nex
             description: cleanText(description, 10000),
             category: cleanText(category, 50),
             priority: cleanText(priority, 50),
+            department: cleanText(department, 100),
             status: TicketStatus.Open,
             requester: {
                 name: freshUserData.name,
@@ -116,12 +120,12 @@ export const createTicket = async (req: AuthenticatedRequest, res: Response, nex
         };
 
         const queryText = `
-            INSERT INTO tickets (id, ticket_number, title, description, status, priority, category, requester, created_by, requester_user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
+            INSERT INTO tickets (id, ticket_number, title, description, status, priority, category, requester, created_by, requester_user_id, department)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
         `;
         const queryParams = [
             newTicketData.id, newTicketData.ticketNumber, newTicketData.title, newTicketData.description,
-            newTicketData.status, newTicketData.priority, newTicketData.category, newTicketData.requester, newTicketData.createdBy, loggedInUser.id
+            newTicketData.status, newTicketData.priority, newTicketData.category, newTicketData.requester, newTicketData.createdBy, loggedInUser.id, newTicketData.department
         ];
 
         const { rows } = await db.query(queryText, queryParams);
@@ -163,7 +167,9 @@ export const uploadAttachment = async (req: AuthenticatedRequest, res: Response,
             return res.status(400).json({ message: 'Nenhum arquivo foi enviado.' });
         }
 
-        const attachmentUrl = await writeOptimizedImage(req.file.buffer, req.file.mimetype, privateAttachmentDir, `ticket-${id}`);
+        const attachmentUrl = isVideoType(req.file.mimetype)
+            ? await writeAttachment(req.file.buffer, req.file.mimetype, privateAttachmentDir, `ticket-${id}`)
+            : await writeOptimizedImage(req.file.buffer, req.file.mimetype, privateAttachmentDir, `ticket-${id}`);
         
         const result = await db.query(
             'UPDATE tickets SET attachment_url = $1 WHERE id = $2 RETURNING id, attachment_url',
@@ -206,7 +212,13 @@ export const updateTicketStatus = async (req: AuthenticatedRequest, res: Respons
             return res.status(403).json({ message: 'Apenas administradores podem alterar o status.' });
         }
 
-        const { rows } = await db.query('UPDATE tickets SET status = $1 WHERE id = $2 RETURNING *', [newStatus, id]);
+        const { rows } = await db.query(
+            `UPDATE tickets
+             SET status = $1::varchar,
+                 closed_at = CASE WHEN $1::varchar = 'resolvido'::varchar THEN COALESCE(closed_at, NOW()) ELSE NULL END
+             WHERE id = $2 RETURNING *`,
+            [newStatus, id],
+        );
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Chamado não encontrado.' });
         }
@@ -224,10 +236,13 @@ export const deleteTicket = async (req: AuthenticatedRequest, res: Response, nex
             return res.status(403).json({ message: 'Apenas administradores podem excluir chamados.' });
         }
         const { id } = req.params;
-        const result = await db.query('DELETE FROM tickets WHERE id = $1', [id]);
+        const result = await db.query('DELETE FROM tickets WHERE id = $1 RETURNING attachment_url', [id]);
         if (result.rowCount === 0) {
             return res.status(404).json({ message: 'Chamado não encontrado.' });
         }
+        await deletePrivateAttachment(result.rows[0].attachment_url, privateAttachmentDir).catch(error => {
+            console.error('Falha ao remover anexo privado após exclusão do chamado:', error);
+        });
         res.status(204).send(); // 204 No Content
     } catch (error) {
         console.error("Erro ao excluir chamado:", error);
@@ -245,10 +260,15 @@ export const pruneTicketsByCount = async (req: AuthenticatedRequest, res: Respon
             DELETE FROM tickets
             WHERE id NOT IN (
                 SELECT id FROM tickets ORDER BY created_at DESC LIMIT 15
-            );
+            )
+            RETURNING attachment_url;
         `;
         const result = await db.query(query);
-        res.status(200).json({ message: `${result.rowCount} chamado(s) antigo(s) excluído(s).` });
+        await Promise.all(result.rows.map(row => deletePrivateAttachment(row.attachment_url, privateAttachmentDir).catch(error => {
+            console.error('Falha ao remover anexo privado após limpeza por contagem:', error);
+        })));
+        const totalResult = await db.query('SELECT COUNT(*)::int AS total FROM tickets');
+        res.status(200).json({ message: `${result.rowCount ?? 0} chamado(s) antigo(s) excluído(s). A regra mantém os 15 mais recentes; restam ${totalResult.rows[0].total}.` });
     } catch (error) {
         console.error("Erro ao excluir chamados por contagem:", error);
         next(error);
@@ -261,9 +281,12 @@ export const pruneTicketsByDate = async (req: AuthenticatedRequest, res: Respons
             return res.status(403).json({ message: 'Ação permitida apenas para administradores.' });
         }
         // Exclui chamados com mais de 30 dias
-        const query = `DELETE FROM tickets WHERE created_at < NOW() - INTERVAL '30 days';`;
+        const query = `DELETE FROM tickets WHERE created_at < NOW() - INTERVAL '30 days' RETURNING attachment_url;`;
         const result = await db.query(query);
-        res.status(200).json({ message: `${result.rowCount} chamado(s) com mais de 30 dias excluído(s).` });
+        await Promise.all(result.rows.map(row => deletePrivateAttachment(row.attachment_url, privateAttachmentDir).catch(error => {
+            console.error('Falha ao remover anexo privado após limpeza por data:', error);
+        })));
+        res.status(200).json({ message: `${result.rowCount ?? 0} chamado(s) com mais de 30 dias excluído(s). Só chamados anteriores a 30 dias são removidos.` });
     } catch (error) {
         console.error("Erro ao excluir chamados por data:", error);
         next(error);
@@ -314,6 +337,31 @@ export const sendEmailNotification = async (req: AuthenticatedRequest, res: Resp
 
     } catch (error) {
         console.error("Erro ao enviar notificação por email:", error);
+        next(error);
+    }
+};
+
+export const getTicketMetrics = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        if (req.user?.role !== 'Administrador') {
+            return res.status(403).json({message: 'Apenas administradores podem consultar métricas.'});
+        }
+        const {rows} = await db.query(`
+          SELECT COALESCE(department, 'Não informado') AS department,
+                 COUNT(*)::int AS total,
+                 COUNT(*) FILTER (WHERE status = $1)::int AS resolved,
+                 ROUND((AVG(EXTRACT(EPOCH FROM (closed_at - created_at)) / 3600) FILTER (WHERE closed_at IS NOT NULL))::numeric, 2) AS average_resolution_hours
+          FROM tickets
+          GROUP BY COALESCE(department, 'Não informado')
+          ORDER BY COALESCE(department, 'Não informado') ASC
+        `, [TicketStatus.Resolved]);
+        res.status(200).json(rows.map(row => ({
+            department: row.department,
+            total: row.total,
+            resolved: row.resolved,
+            averageResolutionHours: row.average_resolution_hours === null ? null : Number(row.average_resolution_hours),
+        })));
+    } catch (error) {
         next(error);
     }
 };

@@ -42,25 +42,31 @@ const TicketTable: React.FC<TicketTableProps> = ({ tickets, totalTickets, isLoad
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 flex justify-between items-center border-b border-slate-200">
+    <div className="ui-surface overflow-hidden rounded-xl border">
+      <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <h2 className="text-xl font-bold text-slate-900">Fila de Chamados</h2>
-        <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+        <div className="grid grid-cols-1 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1.5 sm:flex sm:gap-2" role="tablist" aria-label="Status dos chamados">
           <button
             onClick={() => setActiveTab(TicketTableTab.Open)}
             className={getTabClass(TicketTableTab.Open)}
+            role="tab"
+            aria-selected={activeTab === TicketTableTab.Open}
           >
             Abertos
           </button>
           <button
             onClick={() => setActiveTab(TicketTableTab.InProgress)}
             className={getTabClass(TicketTableTab.InProgress)}
+            role="tab"
+            aria-selected={activeTab === TicketTableTab.InProgress}
           >
             Em Andamento
           </button>
           <button
             onClick={() => setActiveTab(TicketTableTab.Resolved)}
             className={getTabClass(TicketTableTab.Resolved)}
+            role="tab"
+            aria-selected={activeTab === TicketTableTab.Resolved}
           >
             Resolvidos
           </button>
@@ -69,7 +75,7 @@ const TicketTable: React.FC<TicketTableProps> = ({ tickets, totalTickets, isLoad
 
       <div className="overflow-x-auto custom-scrollbar">
         <table className="min-w-full divide-y divide-gray-700/60">
-          <thead className="bg-slate-50 backdrop-blur-sm sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 bg-slate-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Chamado
@@ -121,7 +127,7 @@ const TicketTable: React.FC<TicketTableProps> = ({ tickets, totalTickets, isLoad
             <button
                 onClick={onLoadMore}
                 disabled={isLoadingMore}
-                className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-semibold py-2.5 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait"
+                className="min-h-11 rounded-lg border border-slate-300 bg-white px-6 py-2.5 font-semibold text-slate-800 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-50"
             >
                 {isLoadingMore ? 'Carregando...' : 'Mostrar mais'}
             </button>

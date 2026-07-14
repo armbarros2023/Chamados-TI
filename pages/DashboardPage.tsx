@@ -26,6 +26,8 @@ const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TicketTableTab>(TicketTableTab.Open);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{message: string; action: () => Promise<void>} | null>(null);
+  const [metrics, setMetrics] = useState<apiService.TicketMetric[]>([]);
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   const fetchInitialTickets = useCallback(async () => {
     try {
@@ -106,17 +108,23 @@ const DashboardPage: React.FC = () => {
     }});
   }, [fetchInitialTickets]);
 
+  useEffect(() => {
+    if (user?.role !== 'Administrador') return;
+    setMetricsLoading(true);
+    apiService.getTicketMetrics().then(setMetrics).catch(() => setNotice('Não foi possível carregar as métricas.')).finally(() => setMetricsLoading(false));
+  }, [user?.role, tickets.length, totalTickets]);
+
   const handlePruneByCount = useCallback(() => {
     setConfirmation({message: 'Excluir todos os chamados, exceto os 15 mais recentes?', action: async () => {
       try { const result = await apiService.pruneTicketsByCount(); setNotice(result.message); await fetchInitialTickets(); }
-      catch { setNotice('Erro ao realizar a limpeza por contagem.'); }
+      catch (err) { setNotice(err instanceof Error ? err.message : 'Erro ao realizar a limpeza por contagem.'); }
     }});
   }, [fetchInitialTickets]);
 
   const handlePruneByDate = useCallback(() => {
     setConfirmation({message: 'Excluir todos os chamados com mais de 30 dias?', action: async () => {
       try { const result = await apiService.pruneTicketsByDate(); setNotice(result.message); await fetchInitialTickets(); }
-      catch { setNotice('Erro ao realizar a limpeza por data.'); }
+      catch (err) { setNotice(err instanceof Error ? err.message : 'Erro ao realizar a limpeza por data.'); }
     }});
   }, [fetchInitialTickets]);
 
@@ -167,13 +175,15 @@ const DashboardPage: React.FC = () => {
         onPruneByDate={handlePruneByDate}
         onLoadMore={handleLoadMore}
         onMenuClick={() => setIsSidebarOpen(true)}
+        metrics={metrics}
+        metricsLoading={metricsLoading}
       />
     );
 
     if (isLoading) {
       return (
         <div className="flex-1 flex items-center justify-center text-slate-600">
-          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-teal-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -182,7 +192,7 @@ const DashboardPage: React.FC = () => {
       );
     }
     if (error) {
-      return <div className="flex-1 flex items-center justify-center text-red-500">Erro: {error}</div>;
+      return <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center"><p role="alert" className="text-red-800 dark:text-red-200">Não foi possível carregar os chamados. {error}</p><button type="button" onClick={fetchInitialTickets} className="ui-primary min-h-11 rounded-lg px-4 py-2.5 font-semibold transition-colors">Tentar novamente</button></div>;
     }
 
     switch (currentView) {
@@ -199,7 +209,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 text-slate-800 font-sans overflow-hidden">
+    <div className="ui-page flex h-[100dvh] min-h-screen overflow-hidden font-sans">
       <Sidebar
         user={user}
         tickets={tickets}

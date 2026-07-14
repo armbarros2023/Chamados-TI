@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 import db from '../db.js';
 import { avatarDir, publicDir } from '../paths.js';
 import {writeOptimizedImage} from '../security/image-storage.js';
-import {cleanText, validatePassword} from '../security/validation.js';
+import {cleanText, isSupportedRole, validateEmail, validatePassword} from '../security/validation.js';
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -32,6 +32,9 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
         const safeUsername = cleanText(username, 100);
         const safeName = cleanText(name, 255);
         const safeEmail = cleanText(email, 255).toLowerCase();
+        if (!isSupportedRole(role) || !validateEmail(safeEmail)) {
+            return res.status(400).json({message: 'Função ou e-mail inválido.'});
+        }
 
         const existingUser = await db.query('SELECT id FROM users WHERE username = $1 OR email = $2', [safeUsername, safeEmail]);
         if (existingUser.rows.length > 0) {
@@ -55,7 +58,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { name, email, role, password } = req.body;
@@ -66,9 +69,22 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
         if (password && !validatePassword(password)) {
             return res.status(400).json({message: 'A senha deve ter 10 caracteres, incluindo maiúscula, minúscula e número.'});
         }
+        const safeEmail = cleanText(email, 255).toLowerCase();
+        if (!isSupportedRole(role) || !validateEmail(safeEmail)) {
+            return res.status(400).json({message: 'Função ou e-mail inválido.'});
+        }
+        if (req.user?.id === id && role !== 'Administrador') {
+            return res.status(403).json({message: 'Você não pode remover seu próprio acesso administrativo.'});
+        }
+        const currentUser = await db.query('SELECT role FROM users WHERE id = $1', [id]);
+        if (currentUser.rows.length === 0) return res.status(404).json({ message: 'Usuário não encontrado.' });
+        if (currentUser.rows[0].role === 'Administrador' && role !== 'Administrador') {
+            const admins = await db.query("SELECT COUNT(*)::int AS total FROM users WHERE role = 'Administrador'");
+            if (admins.rows[0].total <= 1) return res.status(409).json({message: 'O último administrador não pode perder acesso administrativo.'});
+        }
 
         const fields = ['name', 'email', 'role'];
-        const values = [cleanText(name, 255), cleanText(email, 255).toLowerCase(), role];
+        const values = [cleanText(name, 255), safeEmail, role];
         let query = 'UPDATE users SET name = $1, email = $2, role = $3';
         
         // Se uma nova senha foi fornecida, adiciona ao update
@@ -103,6 +119,13 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response, next:
         // Impede que o usuário logado se auto-delete
         if (req.user?.id === id) {
             return res.status(403).json({ message: 'Você não pode excluir sua própria conta.' });
+        }
+
+        const targetUser = await db.query('SELECT role FROM users WHERE id = $1', [id]);
+        if (targetUser.rows.length === 0) return res.status(404).json({ message: 'Usuário não encontrado.' });
+        if (targetUser.rows[0].role === 'Administrador') {
+            const admins = await db.query("SELECT COUNT(*)::int AS total FROM users WHERE role = 'Administrador'");
+            if (admins.rows[0].total <= 1) return res.status(409).json({message: 'O último administrador não pode ser excluído.'});
         }
 
         const deleteResult = await db.query('DELETE FROM users WHERE id = $1', [id]);

@@ -108,7 +108,7 @@ PWA / Tauri / Capacitor
 
 ### 2026-07-07 — Staging HTTPS publicado no VPS
 
-- Publicado inicialmente em endereço técnico temporário de contingência, sem alterar os sites existentes no VPS.
+- Publicado em `https://chamados-staging.72-61-63-197.nip.io` sem alterar os sites existentes no VPS.
 - Release `20260707-0954`, usuário Linux sem login, banco PostgreSQL e serviço systemd isolados.
 - Node escuta apenas em `127.0.0.1:3102`; a porta não responde externamente.
 - Backup restaurado, migrations aplicadas e `/api/v1/ready` confirmado.

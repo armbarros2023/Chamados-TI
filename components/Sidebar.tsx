@@ -53,25 +53,27 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
 
   return (
     <>
-      <div 
-        className={`fixed inset-0 bg-black/60 z-30 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+      <button
+        type="button"
+        className={`fixed inset-0 z-30 bg-black/60 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         onClick={onClose}
-      ></div>
+        aria-label="Fechar navegação"
+        tabIndex={isOpen ? 0 : -1}
+      />
 
       <aside className={`fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 p-6 flex flex-col z-40 transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between lg:justify-center text-center mb-10">
           <div className="flex flex-col items-center space-y-4">
-            <img 
-                src="/images.png" 
-                alt="Chemisch Labs Logo"
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-offset-4 ring-offset-slate-900 ring-teal-400"
+            <img
+                src="/brand/arbtech-helpdesk-logo-transparent.png"
+                alt="Arbtech Info"
+                className="h-16 w-16 object-contain border-0 bg-transparent outline-none"
             />
             <div>
-                <h1 className="text-xl font-bold text-white">Chemisch Labs</h1>
-                <p className="text-sm text-slate-300">Suporte Técnico</p>
+                <h1 className="text-xl font-bold text-white">Helpdesk TI</h1>
             </div>
           </div>
-          <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
+          <button onClick={onClose} className="min-h-11 min-w-11 lg:hidden text-slate-400 hover:text-white" aria-label="Fechar navegação">
               <XMarkIcon className="h-7 w-7"/>
           </button>
         </div>
@@ -104,8 +106,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
                     <span className={`h-2 w-2 rounded-full mr-3 ${getStatusColorClass(statusItem.name).split(' ')[0]}`}></span>
                     <span>{getStatusDisplayName(statusItem.name)}</span>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${getStatusColorClass(statusItem.name)} 
-                    ${statusItem.name === TicketStatus.Open && statusItem.count > 0 ? 'animate-pulse ring-2 ring-offset-2 ring-offset-gray-900 ring-blue-500' : ''}`}>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${getStatusColorClass(statusItem.name)}
+                    ${statusItem.name === TicketStatus.Open && statusItem.count > 0 ? 'ring-2 ring-offset-2 ring-offset-gray-900 ring-blue-500' : ''}`}>
                     {statusItem.count}
                 </span>
                 </li>
@@ -133,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
                 </div>
                 <button
                     onClick={onLogout}
-                    className="p-2 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="min-h-11 min-w-11 p-2 text-white rounded-lg hover:bg-red-700 transition-colors"
                     aria-label="Sair"
                     title="Sair"
                 >
@@ -158,10 +160,10 @@ const NavItemLink: React.FC<NavItemLinkProps> = ({ item, active, hasNotification
     <li>
       <button 
         onClick={item.action}
-        className={`w-full flex items-center justify-between space-x-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 transform
+        className={`w-full flex min-h-11 items-center justify-between space-x-3 px-4 py-3 rounded-lg text-sm transition-colors duration-200
           ${active
             ? 'bg-teal-600 text-white font-semibold'
-            : 'text-slate-200 hover:bg-slate-800 hover:text-white hover:translate-x-1'
+            : 'text-slate-200 hover:bg-slate-800 hover:text-white'
           }`}
       >
         <div className="flex items-center space-x-3">

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User } from '../types';
 import { ArrowLeftIcon, CameraIcon, CheckIcon, XMarkIcon } from './icons';
 import * as apiService from '../services/apiService';
@@ -18,16 +18,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
       setSelectedFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
   const handleCancel = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setSelectedFile(null);
     setImagePreview(null);
     if(fileInputRef.current) fileInputRef.current.value = "";
@@ -48,7 +54,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
   };
 
   return (
-    <div className="flex-1 p-4 sm:p-8 overflow-y-auto text-slate-900 flex flex-col items-center">
+    <div className="flex flex-1 flex-col items-center overflow-y-auto p-4 text-slate-900 sm:p-8">
        <input
           type="file"
           ref={fileInputRef}
@@ -59,7 +65,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
 
         <div className="w-full max-w-4xl">
             {feedback && <p role="status" className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-red-800">{feedback}</p>}
-            <div className="flex items-center justify-between mb-8">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">Meu Perfil</h1>
                     <p className="text-slate-600 mt-1">Gerencie suas informações pessoais e avatar.</p>
@@ -74,15 +80,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="ui-surface overflow-hidden rounded-xl border">
                 <div className="h-40 bg-teal-50 border-b border-teal-100 relative">
                     <div className="absolute -bottom-16 left-8">
-                        <div className="relative group">
+                        <div className="relative">
                             <div className="h-32 w-32 rounded-full ring-4 ring-gray-800 flex items-center justify-center bg-slate-100 overflow-hidden">
                                 {imagePreview ? (
-                                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" decoding="async" />
                                 ) : user.avatarUrl ? (
-                                    <img src={getFullAvatarUrl(user.avatarUrl)} alt={user.name} className="h-full w-full object-cover" />
+                                    <img src={getFullAvatarUrl(user.avatarUrl)} alt={user.name} className="h-full w-full object-cover" decoding="async" />
                                 ) : (
                                     <div className="h-32 w-32 rounded-full flex items-center justify-center bg-teal-700 text-white text-5xl font-bold">
                                         {user.name.split(' ').map(n => n[0]).join('').substring(0,2)}
@@ -91,7 +97,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
                             </div>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                className="absolute bottom-1 right-1 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-slate-900/85 text-white transition-colors hover:bg-teal-700"
                                 aria-label="Alterar foto de perfil"
                             >
                                 <CameraIcon className="h-8 w-8 text-white" />
@@ -107,11 +113,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onBackToDashboard, 
                             <p className="text-md text-teal-700 font-semibold">{user.role}</p>
                         </div>
                         {imagePreview && (
-                            <div className="flex items-center space-x-3">
-                                <button onClick={handleSave} disabled={isLoading} className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button onClick={handleSave} disabled={isLoading} className="min-h-11 rounded-lg bg-green-700 px-4 py-2 font-bold text-white transition-colors hover:bg-green-800 disabled:bg-green-800">
                                     <CheckIcon className="h-5 w-5 mr-2" /> {isLoading ? 'Salvando...' : 'Salvar'}
                                 </button>
-                                <button onClick={handleCancel} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+                                <button onClick={handleCancel} className="min-h-11 rounded-lg bg-slate-100 px-4 py-2 font-bold text-slate-800 transition-colors hover:bg-slate-200">
                                     <XMarkIcon className="h-5 w-5 mr-2" /> Cancelar
                                 </button>
                             </div>

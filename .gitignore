@@ -6,6 +6,13 @@ npm-debug.log*
 
 # Arquivos de ambiente 
 .env
+.env.*
+!.env.example
+!.env.*.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.*.example
 
 # === Frontend (Vite/React) ===
 # Ignorar dependências do Node
@@ -31,6 +38,9 @@ coverage/
 playwright-report/
 test-results/
 artifacts/
+src-tauri/target/
+android/.gradle/
+android/app/build/
 
 # === Editor/IDE ===
 .vscode/

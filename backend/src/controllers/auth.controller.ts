@@ -5,6 +5,7 @@ import db from '../db.js';
 import {isNativeSessionRequest, readNativeRefreshToken} from '../security/native-session.js';
 import {clearRefreshCookie, createRefreshToken, hashRefreshToken, readCookie, REFRESH_COOKIE, setRefreshCookie} from '../security/session.js';
 import {rotateRefreshSession} from '../security/session-store.js';
+import {cleanText, validatePassword} from '../security/validation.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('FATAL_ERROR: JWT_SECRET não está definido nas variáveis de ambiente.');
@@ -34,6 +35,44 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       ...(nativeClient ? {refreshToken} : {}),
     });
   } catch (error) { next(error); }
+};
+
+export const register = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {username, name, email, password} = req.body;
+    if ([username, name, email, password].some(value => typeof value !== 'string' || !value.trim())) {
+      return res.status(400).json({message: 'Nome, usuário, e-mail e senha são obrigatórios.'});
+    }
+    if (typeof password !== 'string' || !validatePassword(password)) {
+      return res.status(400).json({message: 'A senha deve ter 10 caracteres, incluindo maiúscula, minúscula e número.'});
+    }
+
+    const safeUsername = cleanText(username, 100);
+    const safeName = cleanText(name, 255);
+    const safeEmail = cleanText(email, 255).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail)) {
+      return res.status(400).json({message: 'Informe um e-mail válido.'});
+    }
+
+    const existingUser = await db.query('SELECT id FROM users WHERE username = $1 OR email = $2', [safeUsername, safeEmail]);
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({message: 'Nome de usuário ou e-mail já cadastrado.'});
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const result = await db.query(
+      `INSERT INTO users (username, name, email, role, password_hash)
+       VALUES ($1, $2, $3, 'Usuário', $4)
+       RETURNING id, username, name, email, role, avatar_url`,
+      [safeUsername, safeName, safeEmail, passwordHash],
+    );
+    return res.status(201).json(publicUser(result.rows[0] as DbUser));
+  } catch (error) {
+    if ((error as {code?: string})?.code === '23505') {
+      return res.status(409).json({message: 'Nome de usuário ou e-mail já cadastrado.'});
+    }
+    return next(error);
+  }
 };
 
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {

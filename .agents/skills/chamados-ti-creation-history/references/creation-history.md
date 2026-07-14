@@ -62,8 +62,8 @@
 
 ### 2026-07-07 — Publicação do staging HTTPS
 
-- VPS autorizado e documentado no inventário privado; credencial de acesso não foi persistida.
-- URL temporária de contingência foi usada antes do domínio corporativo e não deve ser publicada como endpoint principal.
+- VPS de staging autorizada; credencial de acesso não foi persistida.
+- URL temporária de contingência registrada somente na documentação operacional privada.
 - Release `20260707-0954` publicado sem alterar os demais vhosts.
 - Nginx serve a PWA e encaminha `/api/` ao systemd `chamados-ti-staging` em `127.0.0.1:3102`.
 - Banco isolado `chamados_ti_staging` recebeu restore e migrations.
@@ -76,7 +76,7 @@
 ### 2026-07-07 — Domínio corporativo do staging
 
 - O registro `A` de `chamados-staging.arbtechinfo.com.br` foi confirmado nos servidores DNS autoritativos.
-- O Nginx passou a atender o domínio corporativo e preservou um endereço técnico temporário apenas como contingência privada.
+- O Nginx passou a atender o domínio corporativo e preservou o endereço `nip.io` como contingência.
 - O certificado Let's Encrypt foi expandido para os dois domínios, com renovação automática e validade atual até 2026-10-05.
 - O CORS passou a aceitar as duas origens de staging; uma origem externa continuou bloqueada com HTTP 403.
 - Frontend, redirecionamento HTTP para HTTPS, `/api/v1/health`, `/api/v1/ready`, manifest PWA, HSTS, CSP, COOP/CORP e demais cabeçalhos foram validados externamente.

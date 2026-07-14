@@ -14,8 +14,13 @@ CREATE TABLE IF NOT EXISTS tickets (
     created_by JSONB,
     attachment_url TEXT,
     unread_by_admin BOOLEAN DEFAULT FALSE,
-    unread_by_requester BOOLEAN DEFAULT FALSE
+    unread_by_requester BOOLEAN DEFAULT FALSE,
+    department VARCHAR(100) NOT NULL DEFAULT 'Não informado',
+    closed_at TIMESTAMPTZ
 );
+
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS department VARCHAR(100) NOT NULL DEFAULT 'Não informado';
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,

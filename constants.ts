@@ -39,3 +39,9 @@ export const ticketPriorities: { value: TicketPriority; label: string }[] = [
   { value: TicketPriority.Medium, label: "Média" },
   { value: TicketPriority.High, label: "Alta" },
 ];
+
+export const departments = [
+  'Caixa 1', 'Caixa 2', 'Contabilidade', 'Contas a Pagar', 'Contas a Receber',
+  'Compras', 'Diretoria', 'Estoque', 'Fiscal', 'Financeiro', 'Loja',
+  'Marketing', 'TI', 'Televendas', 'Xaraies',
+].sort((a, b) => a.localeCompare(b, 'pt-BR'));

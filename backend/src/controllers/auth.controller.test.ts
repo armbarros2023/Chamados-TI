@@ -6,12 +6,13 @@ process.env.JWT_SECRET = 'test-only-secret-with-at-least-32-characters';
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   compare: vi.fn(),
+  hash: vi.fn(),
 }));
 
 vi.mock('../db.js', () => ({default: {query: mocks.query}}));
-vi.mock('bcrypt', () => ({default: {compare: mocks.compare}}));
+vi.mock('bcrypt', () => ({default: {compare: mocks.compare, hash: mocks.hash}}));
 
-const {login, logout, refresh} = await import('./auth.controller.js');
+const {login, logout, refresh, register} = await import('./auth.controller.js');
 
 const user = {
   id: 'user-1',
@@ -70,6 +71,34 @@ describe('login por tipo de cliente', () => {
 
     expect(response.cookie).toHaveBeenCalledOnce();
     expect(response.json).toHaveBeenCalledWith(expect.not.objectContaining({refreshToken: expect.anything()}));
+  });
+});
+
+describe('cadastro publico', () => {
+  it('cria sempre um usuario comum e nunca aceita papel administrativo', async () => {
+    mocks.query.mockResolvedValueOnce({rows: []}).mockResolvedValueOnce({rows: [{...user, role: 'Usuário'}]});
+    mocks.hash.mockResolvedValue('hashed-password');
+    const request = {
+      body: {username: 'novo.usuario', name: 'Novo Usuário', email: 'novo@example.com', password: 'SenhaForte1'},
+      headers: {},
+    } as unknown as Request;
+    const response = createResponse();
+
+    await register(request, response as unknown as Response, vi.fn() as NextFunction);
+
+    expect(mocks.query).toHaveBeenLastCalledWith(expect.stringContaining("VALUES ($1, $2, $3, 'Usuário', $4)"), expect.arrayContaining(['novo.usuario', 'Novo Usuário', 'novo@example.com', 'hashed-password']));
+    expect(response.status).toHaveBeenCalledWith(201);
+    expect(response.json).toHaveBeenCalledWith(expect.objectContaining({role: 'Usuário'}));
+  });
+
+  it('recusa senha fora da política mínima', async () => {
+    const request = {body: {username: 'novo', name: 'Novo', email: 'novo@example.com', password: 'fraca'}} as unknown as Request;
+    const response = createResponse();
+
+    await register(request, response as unknown as Response, vi.fn() as NextFunction);
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(mocks.query).not.toHaveBeenCalled();
   });
 });
 

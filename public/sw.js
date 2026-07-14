@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chamados-ti-shell-v1';
+const CACHE_NAME = 'chamados-ti-shell-v2';
 const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', event => {
@@ -18,7 +18,16 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  if (request.method !== 'GET' || url.pathname.startsWith('/api')) return;
+  // Dados autenticados nunca podem ir para o cache compartilhado do navegador.
+  // No desenvolvimento, a API é exposta pelo proxy em /backend; em produção,
+  // pode ser acessada diretamente por /api.
+  const isApiRequest =
+    url.pathname === '/api' ||
+    url.pathname.startsWith('/api/') ||
+    url.pathname === '/backend' ||
+    url.pathname.startsWith('/backend/');
+
+  if (request.method !== 'GET' || isApiRequest) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(() => caches.match('/offline.html')));

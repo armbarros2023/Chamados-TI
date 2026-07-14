@@ -12,16 +12,16 @@ interface TicketRowProps {
 }
 
 const getPriorityPillClass = (priority: TicketPriority) => {
-  const baseClass = 'px-3 py-1 text-xs font-semibold rounded-full flex items-center justify-center';
+  const baseClass = 'flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold';
   switch (priority) {
     case TicketPriority.High:
-      return `${baseClass} bg-red-500/20 text-red-300 border border-red-500/30`;
+      return `${baseClass} border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200`;
     case TicketPriority.Medium:
-      return `${baseClass} bg-orange-500/20 text-teal-800 border border-orange-500/30`;
+      return `${baseClass} border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200`;
     case TicketPriority.Low:
-      return `${baseClass} bg-blue-500/20 text-blue-300 border border-blue-500/30`;
+      return `${baseClass} border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-200`;
     default:
-      return `${baseClass} bg-gray-500/20 text-slate-700 border border-gray-500/30`;
+      return `${baseClass} border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200`;
   }
 };
 
@@ -50,23 +50,16 @@ const TicketRow: React.FC<TicketRowProps> = ({ ticket, onUpdateTicketStatus, onS
                            (currentUserRole !== 'Administrador' && ticket.unreadByRequester);
 
   return (
-    <tr
-      className={`group transition-colors duration-200 cursor-pointer ${hasUnreadMessage ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-slate-50'}`}
-      onClick={handleRowClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRowClick();}}
-      aria-label={`Visualizar detalhes do chamado ${ticket.title}`}
-    >
+    <tr className={`ticket-table-row group transition-colors duration-200 ${hasUnreadMessage ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-slate-50'}`}>
         <td className="px-6 py-4 whitespace-nowrap">
             <div className="flex items-center space-x-3">
                 <div className="max-w-48">
                      <div className="flex items-center gap-2.5">
-                        <div className="text-sm font-semibold text-slate-900 truncate group-hover:text-teal-700" title={ticket.title}>
+                        <button onClick={handleRowClick} className="max-w-full truncate text-left text-sm font-semibold text-slate-900 transition-colors hover:text-teal-700" title={ticket.title} aria-label={`Visualizar detalhes do chamado ${ticket.title}`}>
                             {ticket.title}
-                        </div>
+                        </button>
                         {hasUnreadMessage && (
-                            <span className="text-xs font-bold text-teal-800 bg-orange-500/20 px-2.5 py-1 rounded-full animate-pulse">NOVO</span>
+                            <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-bold text-teal-800 dark:bg-teal-950/60 dark:text-teal-200">NOVO</span>
                         )}
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">{ticket.ticketNumber}</div>
@@ -76,7 +69,7 @@ const TicketRow: React.FC<TicketRowProps> = ({ ticket, onUpdateTicketStatus, onS
         <td className="px-6 py-4 whitespace-nowrap">
             <div className="flex items-center">
             {ticket.requester.avatarUrl ? (
-                <img src={getFullAvatarUrl(ticket.requester.avatarUrl)} alt={ticket.requester.name} className="h-9 w-9 rounded-full mr-3 object-cover"/>
+                <img src={getFullAvatarUrl(ticket.requester.avatarUrl)} alt={ticket.requester.name} className="h-9 w-9 rounded-full mr-3 object-cover" loading="lazy" decoding="async"/>
             ) : (
                 <div className="h-9 w-9 rounded-full flex items-center justify-center bg-slate-700 text-white text-sm font-bold mr-3">
                     {ticket.requester.name.split(' ').map(n => n[0]).join('').substring(0,2)}
@@ -109,17 +102,17 @@ const TicketRow: React.FC<TicketRowProps> = ({ ticket, onUpdateTicketStatus, onS
         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
             <div className="flex items-center space-x-2 justify-center">
                 {currentUserRole === 'Administrador' && ticket.status === TicketStatus.Open && (
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateTicketStatus(ticket.id, TicketStatus.InProgress);}} className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-3 rounded-md transition-colors" title="Iniciar Atendimento">
+                  <button onClick={() => onUpdateTicketStatus(ticket.id, TicketStatus.InProgress)} className="min-h-11 rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-800" title="Iniciar atendimento">
                       Iniciar
                   </button>
                 )}
                 {currentUserRole === 'Administrador' && ticket.status === TicketStatus.InProgress && (
-                  <button onClick={(e) => { e.stopPropagation(); onUpdateTicketStatus(ticket.id, TicketStatus.Resolved);}} className="text-xs bg-green-600 hover:bg-green-500 text-white font-semibold py-1.5 px-3 rounded-md transition-colors" title="Resolver Chamado">
+                  <button onClick={() => onUpdateTicketStatus(ticket.id, TicketStatus.Resolved)} className="min-h-11 rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-800" title="Resolver chamado">
                       Resolver
                   </button>
                 )}
                 {currentUserRole === 'Administrador' && (
-                  <button onClick={(e) => { e.stopPropagation(); onDeleteTicket(ticket.id);}} className="text-xs bg-red-800 hover:bg-red-700 text-white font-semibold p-2 rounded-md transition-colors" title="Excluir Chamado">
+                  <button onClick={() => onDeleteTicket(ticket.id)} className="min-h-11 min-w-11 rounded-md bg-red-800 p-2 text-xs font-semibold text-white transition-colors hover:bg-red-900" title="Excluir chamado" aria-label={`Excluir chamado ${ticket.title}`}>
                       <TrashIcon className="h-4 w-4" />
                   </button>
                 )}

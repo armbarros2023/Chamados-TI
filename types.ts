@@ -41,7 +41,9 @@ export interface Ticket {
   priority: TicketPriority;
   date: string;
   description: string;
-  attachmentUrl?: string; 
+  attachmentUrl?: string;
+  department?: string;
+  closedAt?: string | null;
   unreadByAdmin?: boolean;
   unreadByRequester?: boolean; 
 }
