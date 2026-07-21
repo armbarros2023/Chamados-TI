@@ -51,3 +51,25 @@
 - Não tratar o ambiente local como produção.
 - Confirmar ambiente e destino antes de executar migrations, seeds ou exclusões.
 - Nunca persistir access token no cliente; refresh token desktop pertence ao Keychain do sistema operacional.
+
+## Atualização — 2026-07-20: Sistemas e atendimento em staging
+
+- Plano aprovado registrado em `PLANO_SISTEMAS_E_ATENDIMENTO.md`.
+- Campo `system` obrigatório para novos chamados, com sete valores controlados: AceData, Computador, Fluig, Internet, Protheus, WebMail e Windows 11.
+- Migration `backend/scripts/004-ticket-systems.sql` adiciona o campo, preserva registros anteriores como `Não classificado`, cria constraint e índice `(system, closed_at)`.
+- Dashboard administrativo ganhou logos WebP em `public/systems/`, métricas mensais de chamados resolvidos e atalho para filtrar a fila.
+- Filtros de API e interface: busca por número/título/solicitante, sistema, departamento, status e período; a paginação continua no servidor.
+- Rotas de métricas, status, exclusão e limpeza passaram a declarar proteção administrativa também no roteador, além da validação do controlador.
+- Staging recebeu o release `20260720-2318-systems` após backup validado. API, asset WebP, bloqueio sem login, Playwright desktop/mobile e produção isolada foram confirmados.
+- Gates aprovados: lint, 19 testes frontend, 44 backend, 2 scripts, builds frontend/backend, Playwright desktop/mobile e Lighthouse de staging (91 desempenho, 100 acessibilidade, 96 boas práticas; SEO interno 66).
+- Pendência para a retomada: teste autenticado manual do dashboard e do fluxo de criação em staging; depois, aprovação explícita antes de produção e recompilação dos instaladores.
+
+## Atualização — 2026-07-21: Ocean Pulse, métricas e instaladores 0.1.2
+
+- O dashboard de staging recebeu o tema escuro Ocean Pulse, quatro KPIs, filtro recolhido, resumo da fila e métricas por departamento.
+- As métricas por departamento e o resumo da fila aparecem para todos: administradores recebem a visão geral e usuários comuns recebem apenas métricas dos próprios chamados, aplicadas pela API.
+- Release ativo em staging: `20260721-1245-dashboard-metrics`; saúde e readiness responderam HTTP 200 e Playwright desktop/mobile aprovou quatro fluxos.
+- Android 0.1.2: APK Debug em `artifacts/android/Chamados-TI-0.1.2-debug.apk`, `versionCode` 3, assinatura APK v2 válida e checksum `af13d4d7a3ce6fce623926bd0d9dd113794fd25fba3383481a729fb565e1f2ef`.
+- Windows 0.1.2: NSIS x64 em `artifacts/windows/Chamados-TI-0.1.2-x64-setup.exe`, checksum `7710583f49506ab7829d7d2a3801d280b27a86bb94dd82e5a13cc28a00404ab2`; assinatura Authenticode e teste físico em Windows seguem pendentes.
+- iOS Capacitor criado em `ios/`, integrado ao Keychain para refresh token e sincronizado com a API HTTPS de staging. A build de simulador e o IPA não puderam ser gerados porque o Mac aponta apenas para Command Line Tools e não possui identidade Apple de assinatura.
+- `npm run verify` aprovou 23 testes frontend e 44 backend; `npm audit --omit=dev` não encontrou vulnerabilidades de produção. O audit completo ainda indica uma vulnerabilidade alta de desenvolvimento, sem correção automática aplicada.

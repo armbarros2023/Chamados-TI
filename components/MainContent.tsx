@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Ticket, TicketStatus, ViewMode, TicketTableTab } from '../types';
+import { User, Ticket, TicketStatus, TicketSystem, ViewMode, TicketTableTab } from '../types';
 import SummaryCard from './SummaryCard';
 import TicketTable from './TicketTable';
 import { PlusIcon, ComputerDesktopIcon, ExclamationTriangleIcon, ClockIcon, CheckCircleIcon, TrashIcon, Bars3Icon } from './icons';
 import DepartmentMetrics from './DepartmentMetrics';
-import {TicketMetric} from '../services/apiService';
+import SystemMetrics from './SystemMetrics';
+import QueueSummary from './QueueSummary';
+import {TicketFilters, TicketMetric, TicketSystemMetric} from '../services/apiService';
 
 interface MainContentProps {
   user: User;
@@ -24,15 +26,32 @@ interface MainContentProps {
   onMenuClick: () => void;
   metrics: TicketMetric[];
   metricsLoading: boolean;
+  systemMetrics: TicketSystemMetric[];
+  onSelectSystem: (system: TicketSystem) => void;
+  filters: TicketFilters;
+  onApplyFilters: (filters: TicketFilters) => void;
+  onClearFilters: () => void;
+  statusCounts: Record<TicketStatus, number>;
+  averageClosureHours: number | null;
+  onRefresh: () => void;
 }
 
-const MainContent: React.FC<MainContentProps> = ({ user, tickets, totalTickets, isLoadingMore, navigateTo, onUpdateTicketStatus, onShowTicketDetail, currentUserRole, activeTab, setActiveTab, onDeleteTicket, onPruneByCount, onPruneByDate, onLoadMore, onMenuClick, metrics, metricsLoading }) => {
+const formatDuration = (hours: number | null) => {
+  if (hours === null) return '—';
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = Math.round(hours % 24);
+  return days > 0 ? `${days}d ${remainingHours}h` : `${Math.round(hours)}h`;
+};
+
+const MainContent: React.FC<MainContentProps> = ({ user, tickets, totalTickets, isLoadingMore, navigateTo, onUpdateTicketStatus, onShowTicketDetail, currentUserRole, activeTab, setActiveTab, onDeleteTicket, onPruneByCount, onPruneByDate, onLoadMore, onMenuClick, metrics, metricsLoading, systemMetrics, onSelectSystem, filters, onApplyFilters, onClearFilters, statusCounts, averageClosureHours, onRefresh }) => {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
-  const abertos = tickets.filter(t => t.status === TicketStatus.Open).length;
-  const emAndamento = tickets.filter(t => t.status === TicketStatus.InProgress).length;
-  const resolvidos = tickets.filter(t => t.status === TicketStatus.Resolved).length;
+  const abertos = statusCounts[TicketStatus.Open];
+  const emAndamento = statusCounts[TicketStatus.InProgress];
+  const resolvidos = statusCounts[TicketStatus.Resolved];
+  const resolvidosNoMes = currentUserRole === 'Administrador' ? systemMetrics.reduce((total, metric) => total + metric.closedCount, 0) : resolvidos;
 
   // Fecha o menu se clicar fora dele
   useEffect(() => {
@@ -48,18 +67,20 @@ const MainContent: React.FC<MainContentProps> = ({ user, tickets, totalTickets, 
   }, [menuRef]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar sm:p-8">
+    <main className="ocean-workspace flex-1 overflow-y-auto p-4 custom-scrollbar sm:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
             <button onClick={onMenuClick} className="min-h-11 min-w-11 text-slate-600 hover:text-slate-900 lg:hidden" aria-label="Abrir navegação">
                 <Bars3Icon className="h-7 w-7"/>
             </button>
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Olá, {user.name.split(' ')[0]}</h1>
-                <p className="text-slate-600 mt-1 text-sm md:text-base">Acompanhe prioridades e próximos atendimentos.</p>
+                <p className="ocean-eyebrow">Painel</p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Visão geral</h1>
+                <p className="mt-2 text-sm text-slate-600 md:text-base">Acompanhe o desempenho e gerencie os chamados da equipe.</p>
             </div>
         </div>
-        <div className="flex items-center gap-3 self-end sm:self-auto">
+        <div className="flex flex-wrap items-center justify-end gap-3 self-end sm:self-auto">
+            <button onClick={onRefresh} className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50" title="Atualizar dados">↻ <span className="ml-1">Atualizado agora</span></button>
             {currentUserRole === 'Administrador' && (
                 <div className="relative" ref={menuRef}>
                     <button 
@@ -99,16 +120,19 @@ const MainContent: React.FC<MainContentProps> = ({ user, tickets, totalTickets, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-        <SummaryCard title="Total" count={totalTickets} icon={ComputerDesktopIcon} color="blue" />
-        <SummaryCard title="Abertos" count={abertos} icon={ExclamationTriangleIcon} color="yellow" />
-        <SummaryCard title="Em Andamento" count={emAndamento} icon={ClockIcon} color="purple" />
-        <SummaryCard title="Resolvidos" count={resolvidos} icon={CheckCircleIcon} color="green" />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+        <SummaryCard title="Chamados abertos" description="Aguardando atendimento" count={abertos} icon={ComputerDesktopIcon} color="blue" />
+        <SummaryCard title="Em andamento" description="Sendo tratados pela equipe" count={emAndamento} icon={ClockIcon} color="yellow" />
+        <SummaryCard title="Resolvidos no mês" description="Concluídos com sucesso" count={resolvidosNoMes} icon={CheckCircleIcon} color="green" />
+        <SummaryCard title="Tempo médio" description="Até o fechamento" count={formatDuration(averageClosureHours)} icon={ExclamationTriangleIcon} color="purple" />
       </div>
 
-      {currentUserRole === 'Administrador' && <DepartmentMetrics metrics={metrics} isLoading={metricsLoading} />}
+      <div className="mb-8 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(19rem,1fr)] xl:gap-6">
+        <DepartmentMetrics metrics={metrics} isLoading={metricsLoading} />
+        <QueueSummary open={abertos} inProgress={emAndamento} resolved={resolvidos} />
+      </div>
 
-      <TicketTable 
+      <TicketTable
         tickets={tickets} 
         totalTickets={totalTickets}
         isLoadingMore={isLoadingMore}
@@ -119,8 +143,16 @@ const MainContent: React.FC<MainContentProps> = ({ user, tickets, totalTickets, 
         setActiveTab={setActiveTab}
         onDeleteTicket={onDeleteTicket}
         onLoadMore={onLoadMore}
+        filters={filters}
+        onApplyFilters={onApplyFilters}
+        onClearFilters={onClearFilters}
+        onCreateTicket={() => navigateTo('newTicket')}
       />
-    </div>
+
+      {currentUserRole === 'Administrador' && (
+        <SystemMetrics metrics={systemMetrics} isLoading={metricsLoading} onSelectSystem={onSelectSystem} />
+      )}
+    </main>
   );
 };
 

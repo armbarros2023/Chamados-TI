@@ -148,3 +148,11 @@ PWA / Tauri / Capacitor
 - Sessão usa o Windows Credential Manager pelo mesmo `keyring` do Tauri; access token permanece em memória.
 - O build cruzado foi concluído no macOS, método marcado como experimental pelo Tauri.
 - A etapa desktop continua aberta para instalação em Windows real, assinatura Authenticode, atualização assinada, build Intel do macOS e notarização Apple.
+
+### 2026-07-21 — Atualização de teste 0.1.2
+
+- A interface Ocean Pulse e as métricas por departamento/resumo da fila foram incorporadas às builds instaláveis, mantendo conexão exclusiva com a API HTTPS de staging.
+- APK Android Debug 0.1.2 gerado em `artifacts/android/Chamados-TI-0.1.2-debug.apk`; assinatura v2 e metadados 3/0.1.2 validados.
+- Instalador Windows NSIS 0.1.2 gerado em `artifacts/windows/Chamados-TI-0.1.2-x64-setup.exe`; a validação física em Windows e Authenticode ainda são necessárias antes de distribuição ampliada.
+- Projeto iOS Capacitor criado e sincronizado, com Keychain para refresh token e build de simulador documentada em `scripts/build-ios.sh`. A execução está bloqueada até instalar/selecionar o Xcode completo e configurar conta Apple; IPA assinado não foi gerado.
+- Nenhuma alteração foi feita em produção. A homologação em aparelhos pessoais continua obrigatória antes de qualquer distribuição fora do staging.

@@ -23,6 +23,7 @@ import {
   clearDesktopRefreshToken,
   desktopRequest,
   isDesktopRuntime,
+  isIosRuntime,
   isInstalledRuntime,
   loadDesktopRefreshToken,
   saveDesktopRefreshToken,
@@ -46,6 +47,20 @@ describe('sessão desktop Tauri', () => {
 
     expect(isDesktopRuntime()).toBe(false);
     expect(isInstalledRuntime()).toBe(true);
+  });
+
+  it('reconhece o iOS nativo como aplicativo instalado e usa o cofre de sessão', async () => {
+    mocks.platform = 'ios';
+    mocks.secureLoad.mockResolvedValueOnce({refreshToken: 'refresh-ios'});
+
+    expect(isIosRuntime()).toBe(true);
+    expect(isInstalledRuntime()).toBe(true);
+    await saveDesktopRefreshToken('refresh-ios');
+    await expect(loadDesktopRefreshToken()).resolves.toBe('refresh-ios');
+    await clearDesktopRefreshToken();
+
+    expect(mocks.secureSave).toHaveBeenCalledWith({refreshToken: 'refresh-ios'});
+    expect(mocks.secureClear).toHaveBeenCalledOnce();
   });
 
   it('restringe a requisição nativa ao cabeçalho público do cliente desktop', async () => {

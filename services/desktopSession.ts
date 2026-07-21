@@ -18,25 +18,27 @@ declare global {
 
 export const isDesktopRuntime = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
 export const isAndroidRuntime = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-export const isInstalledRuntime = () => isDesktopRuntime() || isAndroidRuntime();
+export const isIosRuntime = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+export const isNativeMobileRuntime = () => isAndroidRuntime() || isIosRuntime();
+export const isInstalledRuntime = () => isDesktopRuntime() || isNativeMobileRuntime();
 
 export const desktopRequest = (url: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers);
   headers.set('X-Chamados-Client', 'desktop');
-  if (isAndroidRuntime()) return fetch(url, {...options, headers});
+  if (isNativeMobileRuntime()) return fetch(url, {...options, headers});
   return tauriFetch(url, {...options, headers});
 };
 
 export const saveDesktopRefreshToken = (refreshToken: string) => (
-  isAndroidRuntime() ? SecureSession.save({refreshToken}) : invoke<void>('save_refresh_token', {refreshToken})
+  isNativeMobileRuntime() ? SecureSession.save({refreshToken}) : invoke<void>('save_refresh_token', {refreshToken})
 );
 
 export const loadDesktopRefreshToken = async () => {
-  if (!isAndroidRuntime()) return invoke<string | null>('load_refresh_token');
+  if (!isNativeMobileRuntime()) return invoke<string | null>('load_refresh_token');
   const result = await SecureSession.load();
   return result.refreshToken ?? null;
 };
 
 export const clearDesktopRefreshToken = () => (
-  isAndroidRuntime() ? SecureSession.clear() : invoke<void>('clear_refresh_token')
+  isNativeMobileRuntime() ? SecureSession.clear() : invoke<void>('clear_refresh_token')
 );

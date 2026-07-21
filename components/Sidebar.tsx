@@ -61,8 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
         tabIndex={isOpen ? 0 : -1}
       />
 
-      <aside className={`fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 p-6 flex flex-col z-40 transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between lg:justify-center text-center mb-10">
+      <aside className={`ocean-sidebar fixed top-0 left-0 z-40 flex h-full w-72 flex-col border-r p-6 transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="mb-10 flex items-center justify-between text-center lg:justify-center">
           <div className="flex flex-col items-center space-y-4">
             <img
                 src="/brand/arbtech-helpdesk-logo-transparent.png"
@@ -79,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
         </div>
         
         <nav className="flex-grow">
-            <h2 className="text-xs font-semibold text-slate-400 mb-4 uppercase tracking-wider">Navegação</h2>
+            <h2 className="ocean-sidebar-heading">Navegação</h2>
             <ul className="space-y-2">
             {navigationItems.map((item) => {
                 let active = false;
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
             </ul>
         </nav>
         <div className='mb-8'>
-            <h2 className="text-xs font-semibold text-slate-400 mb-4 uppercase tracking-wider">Status Rápido</h2>
+            <h2 className="ocean-sidebar-heading">Status rápido</h2>
             <ul className="space-y-3">
             {statusCounts.map((statusItem) => (
                 <li key={statusItem.name} className="flex justify-between items-center text-sm text-slate-200 group">
@@ -114,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, tickets, setCurrentView, curren
             ))}
             </ul>
         </div>
-        <div className="mt-auto border-t border-slate-800 pt-6">
+        <div className="ocean-sidebar-footer mt-auto border-t pt-6">
             <div className="mb-4 flex items-center justify-between">
                 <span className="text-sm text-slate-300">Aparência</span>
                 <ThemeToggle />
@@ -160,10 +160,10 @@ const NavItemLink: React.FC<NavItemLinkProps> = ({ item, active, hasNotification
     <li>
       <button 
         onClick={item.action}
-        className={`w-full flex min-h-11 items-center justify-between space-x-3 px-4 py-3 rounded-lg text-sm transition-colors duration-200
+        className={`ocean-nav-item flex min-h-11 w-full items-center justify-between space-x-3 rounded-lg px-4 py-3 text-sm transition-colors duration-200
           ${active
-            ? 'bg-teal-600 text-white font-semibold'
-            : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+            ? 'ocean-nav-item--active text-white font-semibold'
+            : 'text-slate-200 hover:text-white'
           }`}
       >
         <div className="flex items-center space-x-3">

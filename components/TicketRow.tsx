@@ -91,6 +91,9 @@ const TicketRow: React.FC<TicketRowProps> = ({ ticket, onUpdateTicketStatus, onS
                 {ticket.category}
             </div>
         </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
+            {ticket.system || 'Não classificado'}
+        </td>
         <td className="px-6 py-4 whitespace-nowrap">
             <span className={getPriorityPillClass(ticket.priority)}>
                 {capitalizeFirstLetter(ticket.priority)}
@@ -107,8 +110,8 @@ const TicketRow: React.FC<TicketRowProps> = ({ ticket, onUpdateTicketStatus, onS
                   </button>
                 )}
                 {currentUserRole === 'Administrador' && ticket.status === TicketStatus.InProgress && (
-                  <button onClick={() => onUpdateTicketStatus(ticket.id, TicketStatus.Resolved)} className="min-h-11 rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-800" title="Resolver chamado">
-                      Resolver
+                  <button onClick={() => onUpdateTicketStatus(ticket.id, TicketStatus.Resolved)} className="min-h-11 rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-800" title="Marcar chamado como resolvido">
+                      Marcar resolvido
                   </button>
                 )}
                 {currentUserRole === 'Administrador' && (

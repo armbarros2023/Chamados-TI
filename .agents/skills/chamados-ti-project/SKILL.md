@@ -9,7 +9,7 @@ description: Contexto operacional e decisões do projeto Chamados-TI. Use sempre
 
 1. Trabalhar em `/Users/arbtechinfo/Projetos CC/Chamados-TI`.
 2. Confirmar o caminho antes de editar; a pasta não é um repositório Git independente e o status do repositório pai é ruidoso.
-3. Ler `PROJETO_MELHORIAS.md` antes de qualquer mudança estrutural ou visual.
+3. Ler `PROJETO_MELHORIAS.md` antes de qualquer mudança estrutural ou visual e `PLANO_SISTEMAS_E_ATENDIMENTO.md` antes de alterar a classificação por sistemas, os logos ou os filtros.
 4. Ler [references/project-state.md](references/project-state.md) quando precisar do estado técnico, runtime local ou decisões já aprovadas.
 5. Ler `../chamados-ti-creation-history/references/creation-history.md` quando precisar da cronologia completa e das evidências recentes.
 6. Preservar arquivos e mudanças existentes. Não limpar `node_modules`, `dist`, `build` ou o banco sem pedido explícito.
@@ -35,6 +35,8 @@ Não persistir senhas, tokens, JWT secrets ou URLs privadas nesta skill. O ambie
 
 - Web responsiva e PWA instalável.
 - Windows/macOS com Tauri e Android/iOS com Capacitor para maximizar o reaproveitamento do frontend.
+- A versão de teste multiplataforma atual é `0.1.2`: Android usa Capacitor/Keystore, Windows usa Tauri/Credential Manager e iOS usa Capacitor/Keychain. Todos apontam apenas para a API HTTPS de staging.
+- O projeto iOS está em `ios/`; gerar um aplicativo instalável para iPhone requer Xcode completo selecionado e uma identidade Apple/provisionamento. Não prometer IPA ou App Store sem essas credenciais.
 - React Native + Expo somente se a validação em aparelhos demonstrar necessidade material.
 - Identidade nova, clara, corporativa e acessível.
 - Monorepo modular com contratos, regras e cliente de API compartilhados.
@@ -43,10 +45,21 @@ Não persistir senhas, tokens, JWT secrets ou URLs privadas nesta skill. O ambie
 - Comentários e mudanças de status online na primeira versão.
 - Implantação progressiva, com backup, rollback e homologação antes das lojas.
 
+## Sistemas, logos e fila operacional
+
+- O chamado exige um Sistema: AceData, Computador, Fluig, Internet, Protheus, WebMail ou Windows 11.
+- O backend valida a lista e o banco aplica a constraint; registros anteriores usam `Não classificado` e não entram nas métricas dos logos.
+- Administradores veem os logos na ordem aprovada e a contagem de chamados `resolvido` pelo `closed_at` do mês calendário atual em `America/Sao_Paulo`.
+- Clicar em um logo filtra a fila por sistema, chamados resolvidos e mês atual. A fila também possui busca por número, título ou solicitante e filtros por sistema, departamento e período, todos processados na API.
+- A migration é `backend/scripts/004-ticket-systems.sql`. Aplicá-la somente após backup validado e nunca diretamente em produção sem homologação aprovada.
+- Staging validado: `https://chamados-staging.arbtechinfo.com.br`. A produção permanece separada e só deve receber esse release após aprovação explícita do usuário.
+
 ## Verificar antes de concluir
 
 - Executar build do frontend e backend após alterações relevantes.
 - Validar API, banco e login com evidência fresca.
+- Para a entrega de Sistemas, validar também `GET /api/v1/tickets/metrics/systems` como administrador, criação com Sistema obrigatório, filtros e a abertura dos sete assets em `public/systems/`.
 - Testar desktop e viewport móvel quando houver mudança de interface.
 - Reportar separadamente avisos de build e vulnerabilidades de dependências; não executar correções destrutivas automaticamente.
+- Para atualizações de instaladores, manter Android (`artifacts/android/`) e Windows (`artifacts/windows/`) com versão e checksum; registrar iOS como estrutura/simulador até existir assinatura Apple válida.
 - Deixar o preview ativo quando o usuário pedir para analisar visualmente.

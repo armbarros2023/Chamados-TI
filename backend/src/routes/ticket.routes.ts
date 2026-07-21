@@ -11,10 +11,11 @@ import {
     uploadAttachment,
     sendEmailNotification,
     downloadAttachment,
-    getTicketMetrics
+    getTicketMetrics,
+    getTicketSystemMetrics
 } from '../controllers/ticket.controller.js';
 import { getCommentsForTicket, addCommentToTicket } from '../controllers/comment.controller.js';
-import { protect, requireTicketAccess } from '../middleware/auth.middleware.js';
+import { admin, protect, requireTicketAccess } from '../middleware/auth.middleware.js';
 import { ticketUpload } from '../middleware/upload.middleware.js';
 
 const router = Router();
@@ -41,6 +42,7 @@ const emailLimiter = rateLimit({
 });
 
 router.get('/metrics', protect as RequestHandler, getTicketMetrics as RequestHandler);
+router.get('/metrics/systems', protect as RequestHandler, admin as RequestHandler, getTicketSystemMetrics as RequestHandler);
 
 // GET
 router.get('/', protect as RequestHandler, getTickets as RequestHandler);
@@ -61,12 +63,12 @@ router.post(
 router.post('/:id/send-email', protect as RequestHandler, requireTicketAccess as RequestHandler, emailLimiter as RequestHandler, sendEmailNotification as RequestHandler);
 
 // PATCH
-router.patch('/:id/status', protect as RequestHandler, updateTicketStatus as RequestHandler);
+router.patch('/:id/status', protect as RequestHandler, admin as RequestHandler, updateTicketStatus as RequestHandler);
 router.patch('/:id/mark-read', protect as RequestHandler, requireTicketAccess as RequestHandler, markTicketAsRead as RequestHandler);
 
 // DELETE
-router.delete('/prune/by-count', protect as RequestHandler, pruneTicketsByCount as RequestHandler);
-router.delete('/prune/by-date', protect as RequestHandler, pruneTicketsByDate as RequestHandler);
-router.delete('/:id', protect as RequestHandler, deleteTicket as RequestHandler);
+router.delete('/prune/by-count', protect as RequestHandler, admin as RequestHandler, pruneTicketsByCount as RequestHandler);
+router.delete('/prune/by-date', protect as RequestHandler, admin as RequestHandler, pruneTicketsByDate as RequestHandler);
+router.delete('/:id', protect as RequestHandler, admin as RequestHandler, deleteTicket as RequestHandler);
 
 export default router;

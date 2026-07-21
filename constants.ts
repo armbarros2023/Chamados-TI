@@ -1,4 +1,4 @@
-import { Ticket, TicketStatus, TicketPriority, User, NavItem, TicketCategory, ViewMode } from './types';
+import { Ticket, TicketStatus, TicketPriority, User, NavItem, TicketCategory, TicketSystem, ViewMode } from './types';
 import { ChartBarIcon, PlusIcon, UserCircleIconComponent } from './components/icons';
 
 
@@ -15,7 +15,6 @@ export const quickStatus = (tickets: Ticket[]) => {
     { name: TicketStatus.Open, count: tickets.filter(t => t.status === TicketStatus.Open).length, color: "blue" },
     { name: TicketStatus.InProgress, count: tickets.filter(t => t.status === TicketStatus.InProgress).length, color: "yellow" },
     { name: TicketStatus.Resolved, count: tickets.filter(t => t.status === TicketStatus.Resolved).length, color: "green" },
-    // { name: TicketStatus.Closed, count: tickets.filter(t => t.status === TicketStatus.Closed).length, color: "gray" }, // Removed Closed
   ];
 };
 
@@ -38,6 +37,16 @@ export const ticketPriorities: { value: TicketPriority; label: string }[] = [
   { value: TicketPriority.Low, label: "Baixa" },
   { value: TicketPriority.Medium, label: "Média" },
   { value: TicketPriority.High, label: "Alta" },
+];
+
+export const ticketSystems: { value: TicketSystem; label: string; asset: string }[] = [
+  { value: TicketSystem.AceData, label: 'AceData', asset: '/systems/acedata.webp' },
+  { value: TicketSystem.Computer, label: 'Computador', asset: '/systems/computador.webp' },
+  { value: TicketSystem.Fluig, label: 'Fluig', asset: '/systems/fluig.webp' },
+  { value: TicketSystem.Internet, label: 'Internet', asset: '/systems/internet.webp' },
+  { value: TicketSystem.Protheus, label: 'Protheus', asset: '/systems/protheus.webp' },
+  { value: TicketSystem.WebMail, label: 'WebMail', asset: '/systems/webmail.webp' },
+  { value: TicketSystem.Windows11, label: 'Windows 11', asset: '/systems/windows-11.webp' },
 ];
 
 export const departments = [

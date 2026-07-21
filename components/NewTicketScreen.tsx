@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { User, TicketCategory, TicketPriority } from '../types';
+import { User, TicketCategory, TicketPriority, TicketSystem } from '../types';
 import * as apiService from '../services/apiService';
 import { getFullAvatarUrl } from '../utils';
 import { ArrowLeftIcon, PhotoIcon, TagIcon, Squares2X2Icon, ShieldExclamationIcon, DocumentTextIcon, UserCircleIconComponent, XMarkIcon } from './icons';
-import { departments, ticketCategories, ticketPriorities } from '../constants';
+import { departments, ticketCategories, ticketPriorities, ticketSystems } from '../constants';
 
 interface NewTicketScreenProps {
   user: User;
@@ -16,6 +16,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
   const [category, setCategory] = useState<TicketCategory>(TicketCategory.Software);
   const [priority, setPriority] = useState<TicketPriority>(TicketPriority.Medium);
   const [department, setDepartment] = useState(departments[0]);
+  const [system, setSystem] = useState<TicketSystem | ''>('');
   const [description, setDescription] = useState('');
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -57,8 +58,8 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!title.trim() || !description.trim()) {
-      setError('Título e Descrição são campos obrigatórios.');
+    if (!title.trim() || !description.trim() || !system) {
+      setError('Título, Sistema e Descrição são campos obrigatórios.');
       return;
     }
     setError('');
@@ -71,6 +72,7 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
         category,
         priority,
         department,
+        system,
         description,
       });
       ticketCreated = true;
@@ -148,6 +150,22 @@ const NewTicketScreen: React.FC<NewTicketScreenProps> = ({ user, onTicketCreate,
                     <label htmlFor="ticketDepartment" className={labelStyle}>Departamento</label>
                     <select id="ticketDepartment" value={department} onChange={(e) => setDepartment(e.target.value)} className={inputStyle} required>
                       {departments.map(item => <option key={item} value={item}>{item}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="ticketSystem" className={labelStyle}>
+                        <Squares2X2Icon className="h-5 w-5 mr-2 text-slate-600"/>
+                        Sistema <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <select
+                      id="ticketSystem"
+                      value={system}
+                      onChange={(e) => setSystem(e.target.value as TicketSystem)}
+                      className={inputStyle}
+                      required
+                    >
+                      <option value="" disabled>Selecione o sistema</option>
+                      {ticketSystems.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
                 </div>
                  <div>

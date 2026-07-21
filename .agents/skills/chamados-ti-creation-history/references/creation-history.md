@@ -124,6 +124,29 @@
 - A skill `chamados-ti-creation-history` ganhou o script determinístico `scripts/create-project-backup.sh` e metadados atualizados.
 - `quick_validate.py` confirmou `Skill is valid!`; o script foi executado e seu checksum portátil foi testado.
 
+### 2026-07-20 — Sistemas, logos e filtros em staging
+
+- O plano aprovado foi salvo em `PLANO_SISTEMAS_E_ATENDIMENTO.md`; o escopo inclui Sistema obrigatório, logos por sistema, métricas mensais, filtros de fila e reforço de autorização.
+- Foram gerados derivados WebP dos sete logos em `public/systems/`; os documentos e imagens de origem permanecem preservados.
+- A lista controlada é AceData, Computador, Fluig, Internet, Protheus, WebMail e Windows 11. A API valida a entrada e a migration `004-ticket-systems.sql` adiciona constraint de banco.
+- A métrica administrativa conta apenas chamados `resolvido` cujo `closed_at` esteja entre o primeiro e o último dia do mês em `America/Sao_Paulo`.
+- A fila passou a filtrar e pesquisar no servidor por sistema, departamento, status, período, número, título ou solicitante. Os logos aplicam o filtro correspondente de chamados resolvidos no mês atual.
+- As rotas administrativas de métricas, status, exclusão e limpeza receberam middleware administrativo explícito, mantendo a validação já existente no controlador.
+- Antes da migration em staging, foi criado e validado backup exclusivo do banco; a migration preservou o único chamado existente como `Não classificado`.
+- Release `20260720-2318-systems` foi publicado somente no staging. Uma correção de permissões no diretório do novo release foi necessária após a cópia; a API voltou a responder e a produção permaneceu saudável.
+- Evidências: lint, 19 testes frontend, 44 testes backend, 2 testes de scripts, builds, Playwright desktop/mobile, health da API, WebP com HTTP 200, métricas sem login com HTTP 401 e Lighthouse em staging (91 desempenho, 100 acessibilidade, 96 boas práticas, SEO 66 por não indexar uma central interna).
+- Próximo passo: testar autenticado em staging com conta existente; não publicar em produção nem recompilar instaladores antes da aprovação explícita.
+
+### 2026-07-21 — Painel Ocean Pulse e instaladores 0.1.2
+
+- O staging recebeu a composição Ocean Pulse aprovada, com os KPIs de abertos, andamento, resolvidos do mês e tempo médio; a fila ganhou filtro compacto, estado vazio orientado e ação de atualização.
+- As métricas por departamento e o resumo da fila passaram a ser exibidos para todos os perfis. A API mantém o isolamento: administradores leem o conjunto operacional, usuários comuns somente os próprios chamados.
+- O release `20260721-1245-dashboard-metrics` foi publicado exclusivamente em staging. Health e readiness responderam HTTP 200; Playwright desktop/mobile aprovou quatro cenários e Lighthouse registrou 100 em acessibilidade e boas práticas.
+- A versão de instaladores foi elevada para 0.1.2. Android: `artifacts/android/Chamados-TI-0.1.2-debug.apk`, versão 3/0.1.2, assinatura v2 válida e SHA-256 `af13d4d7a3ce6fce623926bd0d9dd113794fd25fba3383481a729fb565e1f2ef`.
+- Windows: `artifacts/windows/Chamados-TI-0.1.2-x64-setup.exe`, instalador NSIS x64 gerado por Tauri/cargo-xwin e SHA-256 `7710583f49506ab7829d7d2a3801d280b27a86bb94dd82e5a13cc28a00404ab2`.
+- iOS: Capacitor 8 adicionado em `ios/`, versão 0.1.2 e `SecureSession` no Keychain para refresh token. A API incorporada continua sendo a HTTPS de staging. Não foi gerado IPA: o Mac possui apenas Command Line Tools e não há identidade Apple; a instalação em iPhone e a distribuição exigem Xcode completo, conta Apple e provisionamento.
+- Gate da versão: `npm run verify` aprovou 23 testes frontend e 44 backend; sincronizações Android/iOS aprovadas; `npm audit --omit=dev` retornou zero vulnerabilidades de produção. O audit completo sinalizou uma vulnerabilidade alta em dependência de desenvolvimento, sem atualização automática.
+
 ## Evidência validada em 2026-07-06
 
 - Frontend: 5 testes aprovados.

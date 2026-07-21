@@ -1,7 +1,7 @@
 {
   "name": "helpdesk-ti-v.final",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -10,6 +10,9 @@
     "build:android": "npx vite build --mode android",
     "cap:sync:android": "npm run build:android && npx cap sync android",
     "android:apk": "npm run cap:sync:android && sh scripts/build-android.sh",
+    "build:ios": "npx vite build --mode ios",
+    "cap:sync:ios": "npm run build:ios && npx cap sync ios",
+    "ios:simulator": "sh scripts/build-ios.sh",
     "tauri:dev": "tauri dev",
     "tauri:build:mac": "sh scripts/build-macos.sh",
     "tauri:build:windows": "sh scripts/build-windows.sh",
@@ -23,6 +26,7 @@
   "dependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-http": "^2.5.9",
     "react": "^19.1.0",

@@ -16,10 +16,12 @@ CREATE TABLE IF NOT EXISTS tickets (
     unread_by_admin BOOLEAN DEFAULT FALSE,
     unread_by_requester BOOLEAN DEFAULT FALSE,
     department VARCHAR(100) NOT NULL DEFAULT 'Não informado',
+    system VARCHAR(50) NOT NULL DEFAULT 'Não classificado',
     closed_at TIMESTAMPTZ
 );
 
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS department VARCHAR(100) NOT NULL DEFAULT 'Não informado';
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS system VARCHAR(50) NOT NULL DEFAULT 'Não classificado';
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS comments (

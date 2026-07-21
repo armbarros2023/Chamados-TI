@@ -6,7 +6,7 @@ import ProfileScreen from '../components/ProfileScreen';
 import UserManagementScreen from '../components/UserManagementScreen';
 import TicketDetailModal from '../components/TicketDetailModal';
 import { useAuth } from '../context/AuthContext';
-import { Ticket, ViewMode, TicketStatus, TicketTableTab, User } from '../types';
+import { Ticket, ViewMode, TicketStatus, TicketSystem, TicketTableTab, User } from '../types';
 import * as apiService from '../services/apiService';
 import {ConfirmDialog, Notice} from '../components/Feedback';
 
@@ -27,13 +27,27 @@ const DashboardPage: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{message: string; action: () => Promise<void>} | null>(null);
   const [metrics, setMetrics] = useState<apiService.TicketMetric[]>([]);
+  const [systemMetrics, setSystemMetrics] = useState<apiService.TicketSystemMetric[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsVersion, setMetricsVersion] = useState(0);
+  const [filters, setFilters] = useState<apiService.TicketFilters>({});
+  const [statusCounts, setStatusCounts] = useState<Record<TicketStatus, number>>({
+    [TicketStatus.Open]: 0,
+    [TicketStatus.InProgress]: 0,
+    [TicketStatus.Resolved]: 0,
+  });
+
+  const statusForTab: Record<TicketTableTab, TicketStatus> = {
+    [TicketTableTab.Open]: TicketStatus.Open,
+    [TicketTableTab.InProgress]: TicketStatus.InProgress,
+    [TicketTableTab.Resolved]: TicketStatus.Resolved,
+  };
 
   const fetchInitialTickets = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const { tickets: initialTickets, total } = await apiService.getTickets(TICKETS_PER_PAGE, 0);
+      const { tickets: initialTickets, total } = await apiService.getTickets(TICKETS_PER_PAGE, 0, {...filters, status: statusForTab[activeTab]});
       setTickets(initialTickets);
       setTotalTickets(total);
     } catch (err) {
@@ -41,7 +55,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeTab, filters]);
 
   useEffect(() => {
     // Agora, apenas busca os tickets, sem delay ou splash screen.
@@ -65,7 +79,7 @@ const DashboardPage: React.FC = () => {
     setIsLoadingMore(true);
     try {
         const currentOffset = tickets.length;
-        const { tickets: newTickets } = await apiService.getTickets(TICKETS_PER_PAGE, currentOffset);
+        const { tickets: newTickets } = await apiService.getTickets(TICKETS_PER_PAGE, currentOffset, {...filters, status: statusForTab[activeTab]});
         setTickets(prevTickets => [...prevTickets, ...newTickets]);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar mais chamados.');
@@ -73,6 +87,23 @@ const DashboardPage: React.FC = () => {
         setIsLoadingMore(false);
     }
   };
+
+  const handleApplyFilters = useCallback((nextFilters: apiService.TicketFilters) => {
+    setFilters(nextFilters);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+  }, []);
+
+  const handleSelectSystem = useCallback((system: TicketSystem) => {
+    const now = new Date();
+    const formatDateInput = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dateFrom = formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1));
+    const dateTo = formatDateInput(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    setFilters({system, dateFrom, dateTo});
+    setActiveTab(TicketTableTab.Resolved);
+  }, []);
 
   const navigateTo = useCallback((view: ViewMode) => {
     setCurrentView(view);
@@ -85,6 +116,7 @@ const DashboardPage: React.FC = () => {
   const handleCreateTicket = useCallback(async () => {
     try {
       await fetchInitialTickets();
+      setMetricsVersion(version => version + 1);
       navigateTo('dashboard');
     } catch (err) {
       setNotice('Erro ao criar chamado. Tente novamente.');
@@ -95,6 +127,7 @@ const DashboardPage: React.FC = () => {
     try {
       setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status: newStatus } : t));
       await apiService.updateTicketStatus(ticketId, newStatus);
+      setMetricsVersion(version => version + 1);
     } catch (err) {
       setNotice('Erro ao atualizar status. Tente novamente.');
       fetchInitialTickets();
@@ -103,27 +136,56 @@ const DashboardPage: React.FC = () => {
 
   const handleDeleteTicket = useCallback((ticketId: string) => {
     setConfirmation({message: 'Excluir este chamado permanentemente?', action: async () => {
-      try { await apiService.deleteTicket(ticketId); await fetchInitialTickets(); setNotice('Chamado excluído.'); }
+      try { await apiService.deleteTicket(ticketId); await fetchInitialTickets(); setMetricsVersion(version => version + 1); setNotice('Chamado excluído.'); }
       catch { setNotice('Erro ao excluir chamado.'); }
     }});
   }, [fetchInitialTickets]);
 
   useEffect(() => {
-    if (user?.role !== 'Administrador') return;
+    if (!user) return;
     setMetricsLoading(true);
-    apiService.getTicketMetrics().then(setMetrics).catch(() => setNotice('Não foi possível carregar as métricas.')).finally(() => setMetricsLoading(false));
-  }, [user?.role, tickets.length, totalTickets]);
+    const metricsRequest = user.role === 'Administrador'
+      ? Promise.all([apiService.getTicketMetrics(), apiService.getTicketSystemMetrics()])
+      : apiService.getTicketMetrics().then(departmentMetrics => [departmentMetrics, []] as const);
+    metricsRequest
+      .then(([departmentMetrics, nextSystemMetrics]) => {
+        setMetrics(departmentMetrics);
+        setSystemMetrics(nextSystemMetrics);
+      })
+      .catch(() => setNotice('Não foi possível carregar as métricas.'))
+      .finally(() => setMetricsLoading(false));
+  }, [user?.id, user?.role, metricsVersion]);
+
+  useEffect(() => {
+    if (!user) return;
+    Promise.all(Object.values(TicketStatus).map(status => apiService.getTickets(1, 0, {status})))
+      .then(results => setStatusCounts({
+        [TicketStatus.Open]: results[0].total,
+        [TicketStatus.InProgress]: results[1].total,
+        [TicketStatus.Resolved]: results[2].total,
+      }))
+      .catch(() => setNotice('Não foi possível atualizar o resumo dos chamados.'));
+  }, [user?.id, metricsVersion]);
+
+  const averageClosureHours = metrics.reduce((total, metric) => total + ((metric.averageClosureHours ?? 0) * metric.closed), 0) /
+    Math.max(1, metrics.reduce((total, metric) => total + metric.closed, 0));
+  const averageClosure = metrics.some(metric => metric.closed > 0) ? averageClosureHours : null;
+
+  const handleRefresh = useCallback(() => {
+    void fetchInitialTickets();
+    setMetricsVersion(version => version + 1);
+  }, [fetchInitialTickets]);
 
   const handlePruneByCount = useCallback(() => {
     setConfirmation({message: 'Excluir todos os chamados, exceto os 15 mais recentes?', action: async () => {
-      try { const result = await apiService.pruneTicketsByCount(); setNotice(result.message); await fetchInitialTickets(); }
+      try { const result = await apiService.pruneTicketsByCount(); setNotice(result.message); await fetchInitialTickets(); setMetricsVersion(version => version + 1); }
       catch (err) { setNotice(err instanceof Error ? err.message : 'Erro ao realizar a limpeza por contagem.'); }
     }});
   }, [fetchInitialTickets]);
 
   const handlePruneByDate = useCallback(() => {
     setConfirmation({message: 'Excluir todos os chamados com mais de 30 dias?', action: async () => {
-      try { const result = await apiService.pruneTicketsByDate(); setNotice(result.message); await fetchInitialTickets(); }
+      try { const result = await apiService.pruneTicketsByDate(); setNotice(result.message); await fetchInitialTickets(); setMetricsVersion(version => version + 1); }
       catch (err) { setNotice(err instanceof Error ? err.message : 'Erro ao realizar a limpeza por data.'); }
     }});
   }, [fetchInitialTickets]);
@@ -177,6 +239,14 @@ const DashboardPage: React.FC = () => {
         onMenuClick={() => setIsSidebarOpen(true)}
         metrics={metrics}
         metricsLoading={metricsLoading}
+        systemMetrics={systemMetrics}
+        onSelectSystem={handleSelectSystem}
+        filters={filters}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        statusCounts={statusCounts}
+        averageClosureHours={averageClosure}
+        onRefresh={handleRefresh}
       />
     );
 

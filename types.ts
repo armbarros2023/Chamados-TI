@@ -43,6 +43,7 @@ export interface Ticket {
   description: string;
   attachmentUrl?: string;
   department?: string;
+  system: TicketSystem | 'Não classificado';
   closedAt?: string | null;
   unreadByAdmin?: boolean;
   unreadByRequester?: boolean; 
@@ -94,4 +95,14 @@ export enum TicketTableTab {
   Open = "Abertos",
   InProgress = "Em Andamento",
   Resolved = "Resolvidos",
+}
+
+export enum TicketSystem {
+  AceData = 'AceData',
+  Computer = 'Computador',
+  Fluig = 'Fluig',
+  Internet = 'Internet',
+  Protheus = 'Protheus',
+  WebMail = 'WebMail',
+  Windows11 = 'Windows 11',
 }

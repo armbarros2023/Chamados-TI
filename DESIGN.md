@@ -13,10 +13,17 @@ colors:
   focus: "#14b8a6"
   danger: "#b91c1c"
   success: "#15803d"
-  dark-canvas: "#0f172a"
-  dark-surface: "#1e293b"
-  dark-ink: "#f1f5f9"
-  dark-border: "#475569"
+  dark-canvas: "#061426"
+  dark-sidebar: "#04101E"
+  dark-surface: "#0E2238"
+  dark-surface-elevated: "#132B45"
+  dark-primary: "#00CDB5"
+  dark-data: "#3B82F6"
+  dark-warning: "#FFC62E"
+  dark-success: "#31C979"
+  dark-ink: "#F8FAFC"
+  dark-muted: "#B8C6D9"
+  dark-border: "#2B4968"
 typography:
   display:
     fontFamily: "Aptos, Segoe UI, system-ui, sans-serif"
@@ -81,6 +88,8 @@ Chamados TI é uma ferramenta de trabalho direta, estável e profissional. A inf
 
 **The Persistent Preference Rule.** O tema claro é o padrão. O tema escuro é opcional, respeita a preferência do sistema na primeira visita e permanece salvo apenas no dispositivo; a alternância está disponível antes e depois do login.
 
+**Ocean Pulse.** No modo escuro, o painel usa a composição aprovada Ocean Pulse: azul-marinho profundo no canvas, sidebar quase-preta, superfícies azuladas elevadas e turquesa como sinal de ação. Azul elétrico representa dados, âmbar indica atendimento em andamento e verde-esmeralda confirma resolução. A identidade permanece operacional, sem brilho excessivo ou gradientes decorativos.
+
 **Key Characteristics:**
 
 - Superfícies claras, frias e legíveis como base operacional.
@@ -99,7 +108,7 @@ O azul-petróleo é o sinal de comando do produto: conduz ações primárias, se
 - **Atenção:** `accent` é reservado a aviso, pendência e informação que exige leitura.
 - **Estrutura:** `canvas`, `surface`, `ink`, `muted` e `border` organizam fundo, conteúdo, texto e separação sem criar ruído.
 - **Estados:** `danger` só aparece em falha, exclusão ou risco; `success` confirma conclusão sem competir com a ação principal.
-- **Acessibilidade:** `focus` forma um contorno visível de 3 px; em tema escuro, `dark-canvas`, `dark-surface`, `dark-ink` e `dark-border` preservam a mesma leitura operacional.
+- **Acessibilidade:** `focus` forma um contorno visível de 3 px; em tema escuro, o conjunto Ocean Pulse (`dark-canvas`, `dark-surface`, `dark-ink`, `dark-muted` e `dark-border`) preserva a mesma leitura operacional.
 
 **The Contrast Rule.** Texto normal deve manter contraste mínimo de 4.5:1. Status sempre combinam cor, texto e, quando houver, ícone.
 

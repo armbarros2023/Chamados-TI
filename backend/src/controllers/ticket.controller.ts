@@ -9,17 +9,19 @@ import {privateAttachmentDir} from '../paths.js';
 import {deletePrivateAttachment, writeAttachment, writeOptimizedImage} from '../security/image-storage.js';
 import {isVideoType} from '../security/upload-policy.js';
 import {cleanText} from '../security/validation.js';
+import {isTicketSystem, ticketSystems} from '../security/ticket-system.js';
 
 export const getTickets = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const user = req.user;
         const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 15, 1), 100);
         const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
-
-        let dataQueryText: string;
-        let countQueryText: string;
-        let queryParams: (string | number)[] = [];
-        let countParams: (string | number)[] = [];
+        const queryParams: (string | number)[] = [];
+        const whereConditions: string[] = [];
+        const addParam = (value: string | number) => {
+            queryParams.push(value);
+            return `$${queryParams.length}`;
+        };
 
         const selectFields = `
             id, title, description, status, priority, category, requester, created_by,
@@ -27,21 +29,55 @@ export const getTickets = async (req: AuthenticatedRequest, res: Response, next:
             ticket_number AS "ticketNumber",
             created_at AS "date",
             department,
+            system,
             closed_at AS "closedAt",
             unread_by_admin AS "unreadByAdmin",
             unread_by_requester AS "unreadByRequester"
         `;
 
         if (user?.role !== 'Administrador') {
-            dataQueryText = `SELECT ${selectFields} FROM tickets WHERE requester_user_id = $1 OR (requester_user_id IS NULL AND created_by->>'username' = $2) ORDER BY created_at DESC LIMIT $3 OFFSET $4`;
-            countQueryText = `SELECT COUNT(*) FROM tickets WHERE requester_user_id = $1 OR (requester_user_id IS NULL AND created_by->>'username' = $2)`;
-            queryParams = [user?.id || '', user?.username || '', limit, offset];
-            countParams = [user?.id || '', user?.username || ''];
-        } else {
-            dataQueryText = `SELECT ${selectFields} FROM tickets ORDER BY created_at DESC LIMIT $1 OFFSET $2`;
-            countQueryText = `SELECT COUNT(*) FROM tickets`;
-            queryParams = [limit, offset];
+            const userId = addParam(user?.id || '');
+            const username = addParam(user?.username || '');
+            whereConditions.push(`(requester_user_id = ${userId} OR (requester_user_id IS NULL AND created_by->>'username' = ${username}))`);
         }
+
+        const status = req.query.status;
+        if (status !== undefined) {
+            if (typeof status !== 'string' || !Object.values(TicketStatus).includes(status as TicketStatus)) {
+                return res.status(400).json({message: 'Status de filtro inválido.'});
+            }
+            whereConditions.push(`status = ${addParam(status)}`);
+        }
+
+        const system = req.query.system;
+        if (system !== undefined) {
+            if (!isTicketSystem(system)) return res.status(400).json({message: 'Sistema de filtro inválido.'});
+            whereConditions.push(`system = ${addParam(system)}`);
+        }
+
+        const department = typeof req.query.department === 'string' ? cleanText(req.query.department, 100) : '';
+        if (department) whereConditions.push(`department = ${addParam(department)}`);
+
+        const search = typeof req.query.search === 'string' ? cleanText(req.query.search, 180).trim() : '';
+        if (search) {
+            const term = addParam(`%${search}%`);
+            whereConditions.push(`(ticket_number ILIKE ${term} OR title ILIKE ${term} OR requester->>'name' ILIKE ${term})`);
+        }
+
+        const isDate = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+        const dateFrom = req.query.dateFrom;
+        const dateTo = req.query.dateTo;
+        if (dateFrom !== undefined && !isDate(dateFrom)) return res.status(400).json({message: 'Data inicial inválida.'});
+        if (dateTo !== undefined && !isDate(dateTo)) return res.status(400).json({message: 'Data final inválida.'});
+        if (typeof dateFrom === 'string') whereConditions.push(`created_at >= ${addParam(`${dateFrom}T00:00:00-03:00`)}`);
+        if (typeof dateTo === 'string') whereConditions.push(`created_at < (${addParam(`${dateTo}T00:00:00-03:00`)}::timestamptz + INTERVAL '1 day')`);
+
+        const whereClause = whereConditions.length ? `WHERE ${whereConditions.join(' AND ')}` : '';
+        const countParams = [...queryParams];
+        const limitParam = addParam(limit);
+        const offsetParam = addParam(offset);
+        const dataQueryText = `SELECT ${selectFields} FROM tickets ${whereClause} ORDER BY created_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`;
+        const countQueryText = `SELECT COUNT(*) FROM tickets ${whereClause}`;
         
         const { rows } = await db.query(dataQueryText, queryParams);
         const countResult = await db.query(countQueryText, countParams);
@@ -87,10 +123,10 @@ export const markTicketAsRead = async (req: AuthenticatedRequest, res: Response,
 
 export const createTicket = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        const { title, description, category, priority, department = 'Não informado' } = req.body;
+        const { title, description, category, priority, department = 'Não informado', system } = req.body;
         const loggedInUser = req.user;
 
-        if (!title || !description || !category || !priority || !loggedInUser) {
+        if (!title || !description || !category || !priority || !isTicketSystem(system) || !loggedInUser) {
             return res.status(400).json({ message: 'Todos os campos são obrigatórios e o usuário deve estar autenticado.' });
         }
 
@@ -109,6 +145,7 @@ export const createTicket = async (req: AuthenticatedRequest, res: Response, nex
             category: cleanText(category, 50),
             priority: cleanText(priority, 50),
             department: cleanText(department, 100),
+            system,
             status: TicketStatus.Open,
             requester: {
                 name: freshUserData.name,
@@ -120,12 +157,12 @@ export const createTicket = async (req: AuthenticatedRequest, res: Response, nex
         };
 
         const queryText = `
-            INSERT INTO tickets (id, ticket_number, title, description, status, priority, category, requester, created_by, requester_user_id, department)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
+            INSERT INTO tickets (id, ticket_number, title, description, status, priority, category, requester, created_by, requester_user_id, department, system)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *;
         `;
         const queryParams = [
             newTicketData.id, newTicketData.ticketNumber, newTicketData.title, newTicketData.description,
-            newTicketData.status, newTicketData.priority, newTicketData.category, newTicketData.requester, newTicketData.createdBy, loggedInUser.id, newTicketData.department
+            newTicketData.status, newTicketData.priority, newTicketData.category, newTicketData.requester, newTicketData.createdBy, loggedInUser.id, newTicketData.department, newTicketData.system
         ];
 
         const { rows } = await db.query(queryText, queryParams);
@@ -212,15 +249,29 @@ export const updateTicketStatus = async (req: AuthenticatedRequest, res: Respons
             return res.status(403).json({ message: 'Apenas administradores podem alterar o status.' });
         }
 
+        const currentTicket = await db.query('SELECT status FROM tickets WHERE id = $1', [id]);
+        if (currentTicket.rows.length === 0) {
+            return res.status(404).json({ message: 'Chamado não encontrado.' });
+        }
+        const allowedTransitions: Record<TicketStatus, TicketStatus[]> = {
+            [TicketStatus.Open]: [TicketStatus.InProgress],
+            [TicketStatus.InProgress]: [TicketStatus.Resolved],
+            [TicketStatus.Resolved]: [],
+        };
+        const currentStatus = currentTicket.rows[0].status as TicketStatus;
+        if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+            return res.status(409).json({ message: 'Transição de status não permitida para este chamado.' });
+        }
+
         const { rows } = await db.query(
             `UPDATE tickets
              SET status = $1::varchar,
                  closed_at = CASE WHEN $1::varchar = 'resolvido'::varchar THEN COALESCE(closed_at, NOW()) ELSE NULL END
-             WHERE id = $2 RETURNING *`,
-            [newStatus, id],
+             WHERE id = $2 AND status = $3::varchar RETURNING *`,
+            [newStatus, id, currentStatus],
         );
         if (rows.length === 0) {
-            return res.status(404).json({ message: 'Chamado não encontrado.' });
+            return res.status(409).json({ message: 'O status do chamado foi alterado. Atualize a fila e tente novamente.' });
         }
         res.status(200).json(rows[0]);
     } catch (error) {
@@ -343,24 +394,52 @@ export const sendEmailNotification = async (req: AuthenticatedRequest, res: Resp
 
 export const getTicketMetrics = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-        if (req.user?.role !== 'Administrador') {
-            return res.status(403).json({message: 'Apenas administradores podem consultar métricas.'});
+        const user = req.user;
+        const queryParams: string[] = [TicketStatus.Resolved];
+        let scopeClause = '';
+
+        // Administradores visualizam a operação inteira; usuários veem somente seus próprios chamados.
+        if (user?.role !== 'Administrador') {
+            queryParams.push(user?.id || '', user?.username || '');
+            scopeClause = `WHERE (requester_user_id = $2 OR (requester_user_id IS NULL AND created_by->>'username' = $3))`;
         }
         const {rows} = await db.query(`
           SELECT COALESCE(department, 'Não informado') AS department,
                  COUNT(*)::int AS total,
-                 COUNT(*) FILTER (WHERE status = $1)::int AS resolved,
+                 COUNT(*) FILTER (WHERE status = $1)::int AS closed,
                  ROUND((AVG(EXTRACT(EPOCH FROM (closed_at - created_at)) / 3600) FILTER (WHERE closed_at IS NOT NULL))::numeric, 2) AS average_resolution_hours
           FROM tickets
+          ${scopeClause}
           GROUP BY COALESCE(department, 'Não informado')
           ORDER BY COALESCE(department, 'Não informado') ASC
-        `, [TicketStatus.Resolved]);
+        `, queryParams);
         res.status(200).json(rows.map(row => ({
             department: row.department,
             total: row.total,
-            resolved: row.resolved,
-            averageResolutionHours: row.average_resolution_hours === null ? null : Number(row.average_resolution_hours),
+            closed: row.closed,
+            averageClosureHours: row.average_resolution_hours === null ? null : Number(row.average_resolution_hours),
         })));
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getTicketSystemMetrics = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        if (req.user?.role !== 'Administrador') {
+            return res.status(403).json({message: 'Apenas administradores podem consultar métricas.'});
+        }
+        const {rows} = await db.query(`
+          SELECT system, COUNT(*)::int AS closed_count
+          FROM tickets
+          WHERE system = ANY($1::varchar[])
+            AND status = $2
+            AND closed_at >= (date_trunc('month', NOW() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo')
+            AND closed_at < ((date_trunc('month', NOW() AT TIME ZONE 'America/Sao_Paulo') + INTERVAL '1 month') AT TIME ZONE 'America/Sao_Paulo')
+          GROUP BY system
+        `, [ticketSystems, TicketStatus.Resolved]);
+        const totals = new Map(rows.map(row => [row.system, Number(row.closed_count)]));
+        res.status(200).json(ticketSystems.map(system => ({system, closedCount: totals.get(system) || 0})));
     } catch (error) {
         next(error);
     }

@@ -9,7 +9,7 @@ export const getFullAvatarUrl = (relativePath: string | undefined): string | und
   }
 
   // Define a URL base do backend, removendo o /api se existir.
-  const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api')
+  const backendOrigin = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3002/api/v1' : '/api/v1'))
     .replace(/\/api(?:\/v\d+)?\/?$/, '');
 
   // Evita adicionar o prefixo se já for uma URL completa (ex: de um serviço externo)
